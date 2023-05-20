@@ -8,7 +8,11 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print('No .env file found: $e');
+  }
   await Hive.initFlutter();
   Hive.registerAdapter(StopAdapter());
   await Hive.openBox<Stop>('savedStops');

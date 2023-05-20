@@ -1,4 +1,4 @@
-package com.example.better_bus_dublin
+package com.essence.better_bus_dublin
 
 import io.flutter.embedding.android.FlutterActivity
 

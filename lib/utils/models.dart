@@ -79,6 +79,9 @@ class Stop {
   @HiveField(9)
   String? parentStation;
 
+  @HiveField(10)
+  String? notice;
+
   Stop({
     required this.stopId,
     required this.stopCode,
@@ -90,6 +93,7 @@ class Stop {
     this.stopUrl,
     this.locationType,
     this.parentStation,
+    this.notice,
   });
 }
 

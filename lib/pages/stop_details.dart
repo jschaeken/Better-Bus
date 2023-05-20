@@ -4,6 +4,7 @@ import 'package:better_bus_dublin/utils/components.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -42,6 +43,7 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
                 onPressed: () {
                   isInitialLoad = false;
                   setState(() {});
+                  HapticFeedback.lightImpact();
                   if (value.containsKey(widget.stop.stopCode)) {
                     log('removing stop ${widget.stop.stopCode} from savedStops');
                     Hive.box<Stop>('savedStops').delete(widget.stop.stopCode);
@@ -65,7 +67,6 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
                           : 0,
                     )
                     .scaleXY(end: 1.5)
-                    .then()
                     .shimmer()
                     .then()
                     .scaleXY(end: 1 / 1.5),
@@ -217,9 +218,62 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
                                         '${listBuses.data![index].vehicleInfo.routeShortName} to ${listBuses.data![index].vehicleInfo.tripHeadsign}',
                                         fontSize: 16,
                                       ),
-                                      trailing: BoldTileText(
-                                        '$time ${time == 1 ? 'min' : 'mins'}',
-                                        fontSize: 18,
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          BoldTileText(
+                                            '$time ${time == 1 ? 'min' : 'mins'}',
+                                            fontSize: 18,
+                                          ),
+                                          listBuses.data![index].scheduleType !=
+                                                  ScheduleType.live
+                                              ? Container()
+                                              : Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const SizedBox(
+                                                      width: 10,
+                                                    ),
+                                                    Container(
+                                                      width: 10,
+                                                      height: 10,
+                                                      decoration: BoxDecoration(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .tertiary,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                          100,
+                                                        ),
+                                                      ),
+                                                    )
+                                                        .animate(
+                                                            onPlay: (controller) =>
+                                                                controller.repeat(
+                                                                    reverse:
+                                                                        true))
+                                                        .fade(
+                                                            duration: 1000.ms),
+                                                    const SizedBox(
+                                                      width: 5,
+                                                    ),
+                                                    Text(
+                                                      'LIVE',
+                                                      style: GoogleFonts.inter(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .tertiary,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                        ],
                                       ),
                                     ),
                                   ));

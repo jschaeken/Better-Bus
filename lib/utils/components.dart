@@ -60,10 +60,14 @@ class SavedStopTile extends StatelessWidget {
                     Flexible(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(100),
-                        child: Image.asset(
-                          'assets/images/dublinBusLogoSmall.png',
-                          filterQuality: FilterQuality.none,
-                          isAntiAlias: true,
+                        child: LimitedBox(
+                          maxHeight: 40,
+                          maxWidth: 40,
+                          child: Image.asset(
+                            'assets/images/dublinBusLogoSmall.png',
+                            filterQuality: FilterQuality.none,
+                            isAntiAlias: true,
+                          ),
                         ),
                       ),
                     ),

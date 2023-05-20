@@ -213,9 +213,9 @@ class ApiInterface extends ChangeNotifier {
     //DEMO DATA
     return [
       BusRtpi(
-        arrivalTime: DateTime.now().add(const Duration(minutes: 6)),
+        arrivalTime: DateTime.now().add(const Duration(minutes: 2)),
         departureTime: DateTime.now(),
-        scheduleType: ScheduleType.scheduled,
+        scheduleType: ScheduleType.live,
         vehicleInfo: VehicleInfo(
           position: [
             53.38383333,
@@ -230,9 +230,9 @@ class ApiInterface extends ChangeNotifier {
         ),
       ),
       BusRtpi(
-        arrivalTime: DateTime.now().add(const Duration(minutes: 2)),
+        arrivalTime: DateTime.now().add(const Duration(minutes: 7)),
         departureTime: DateTime.now(),
-        scheduleType: ScheduleType.scheduled,
+        scheduleType: ScheduleType.live,
         vehicleInfo: VehicleInfo(
           position: [
             53.38383333,
