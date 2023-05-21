@@ -258,6 +258,7 @@ class ModalSearchBar extends StatelessWidget {
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
           ],
+          keyboardType: TextInputType.number,
           style: GoogleFonts.inter(
             color: Theme.of(context).colorScheme.onPrimary,
             fontSize: 22,
