@@ -66,41 +66,94 @@ class HomePageState extends State<HomePage> {
                       'assets/images/appleMap.jpg',
                     ),
               SafeArea(
-                child: Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          GestureDetector(
-                            onTap: () => setState(() {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text(
-                                    'Stops Loaded: ${Provider.of<ApiInterface>(context, listen: false).listStops.length}'),
-                              ));
-                            }),
-                            child: Container(
-                                color: Colors.red,
-                                child: Text(
-                                  'Stops Loaded: ${Provider.of<ApiInterface>(context).listStops.length}',
-                                )),
+                child: Column(
+                  children: [
+                    Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              SizedBox(
+                                width: 100,
+                                child: GestureDetector(
+                                  onTap: () => setState(() {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                      content: Text(
+                                          'txt file str length: ${Provider.of<ApiInterface>(context).longStringLength}'),
+                                    ));
+                                  }),
+                                  child: Container(
+                                      color: Colors.green,
+                                      child: Text(
+                                        'txt file str length: ${Provider.of<ApiInterface>(context).longStringLength}',
+                                      )),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 100,
+                                child: GestureDetector(
+                                  onTap: () => setState(() {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                      content: Text(
+                                          'Stops Loaded: ${Provider.of<ApiInterface>(context, listen: false).listStops.length}'),
+                                    ));
+                                  }),
+                                  child: Container(
+                                      color: Colors.red,
+                                      child: Text(
+                                        'Stops Loaded: ${Provider.of<ApiInterface>(context).listStops.length}',
+                                      )),
+                                ),
+                              ),
+                              PressableIcon(
+                                icon: CupertinoIcons.location_fill,
+                                onPressed: () {},
+                              ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              PressableIcon(
+                                icon: CupertinoIcons.settings,
+                                onPressed: () {},
+                              )
+                            ],
                           ),
-                          PressableIcon(
-                            icon: CupertinoIcons.location_fill,
-                            onPressed: () {},
+                        )),
+                    Container(
+                        color: Colors.transparent,
+                        width: 200,
+                        height: 500,
+                        child: ListView.builder(
+                          itemCount: Provider.of<ApiInterface>(context)
+                              .listStops
+                              .length,
+                          itemBuilder: (context, index) => Card(
+                            child: ListTile(
+                              title: Text(
+                                  'name: "${Provider.of<ApiInterface>(context).listStops[index].stopName}"',
+                                  style: GoogleFonts.inter()),
+                              subtitle: Text(
+                                  'code: "${Provider.of<ApiInterface>(context).listStops[index].stopCode}"',
+                                  style: GoogleFonts.inter()),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    CupertinoPageRoute(
+                                        builder: (context) => StopDetailsPage(
+                                            stop: Provider.of<ApiInterface>(
+                                                    context,
+                                                    listen: false)
+                                                .listStops[index])));
+                              },
+                            ),
                           ),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                          PressableIcon(
-                            icon: CupertinoIcons.settings,
-                            onPressed: () {},
-                          )
-                        ],
-                      ),
-                    )),
+                        ))
+                  ],
+                ),
               ),
             ],
           ),

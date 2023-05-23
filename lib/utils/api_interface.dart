@@ -124,10 +124,18 @@ class ApiInterface extends ChangeNotifier {
         .toList();
   }
 
+  int _longStringLength = -1;
+  int get longStringLength => _longStringLength;
+  set longStringLength(int value) {
+    _longStringLength = value;
+    notifyListeners();
+  }
+
   Future<void> loadStops({Function(String e)? callback}) async {
     try {
-      final longString =
+      String longString =
           await rootBundle.loadString('assets/gtfs_data/stops.txt');
+      longStringLength = longString.length;
       _listStops = const CsvToListConverter().convert(longString).map((row) {
         return Stop(
           stopId: row[0].toString(),
