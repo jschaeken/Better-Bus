@@ -30,22 +30,6 @@ class MapView extends StatelessWidget {
       onTap: (location) => print('onTap: $location'),
       onCameraMove: (cameraUpdate) => print('onCameraMove: $cameraUpdate'),
       compassEnabled: true,
-      onMapCreated: (controller) {
-        Future.delayed(const Duration(seconds: 2)).then(
-          (_) {
-            controller.animateCamera(
-              CameraUpdate.newCameraPosition(
-                const CameraPosition(
-                  bearing: 270.0,
-                  target: LatLng(51.5160895, -0.1294527),
-                  tilt: 30.0,
-                  zoom: 18,
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }

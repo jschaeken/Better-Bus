@@ -124,23 +124,34 @@ class ApiInterface extends ChangeNotifier {
         .toList();
   }
 
-  Future<void> loadStops() async {
-    final longString =
-        await rootBundle.loadString('assets/gtfs_data/stops.txt');
-    _listStops = const CsvToListConverter().convert(longString).map((row) {
-      return Stop(
-        stopId: row[0].toString(),
-        stopCode: row[1].toString(),
-        stopName: row[2].toString(),
-        stopLat: double.parse(row[4].toString()),
-        stopLon: double.parse(row[5].toString()),
-      );
-    }).toList();
+  Future<void> loadStops({Function(String e)? callback}) async {
+    try {
+      final longString =
+          await rootBundle.loadString('assets/gtfs_data/stops.txt');
+      _listStops = const CsvToListConverter().convert(longString).map((row) {
+        return Stop(
+          stopId: row[0].toString(),
+          stopCode: row[1].toString(),
+          stopName: row[2].toString(),
+          stopLat: double.parse(row[4].toString()),
+          stopLon: double.parse(row[5].toString()),
+        );
+      }).toList();
+    } catch (e) {
+      if (callback != null) {
+        callback(e.toString());
+      }
+    }
   }
 
-  Future<List<Stop>> searchByStopCode(String trim) async {
+  Future<List<Stop>> searchByStopCode(
+      String trim, Function(String e) errorCallback) async {
     if (listStops.isEmpty) {
-      await loadStops();
+      await loadStops(
+        callback: (e) {
+          errorCallback(e);
+        },
+      );
     }
     if (trim.isEmpty) {
       return [];

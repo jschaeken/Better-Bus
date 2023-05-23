@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:better_bus_dublin/components/map_view.dart';
 import 'package:better_bus_dublin/pages/saved_page.dart';
 import 'package:better_bus_dublin/pages/stop_details.dart';
@@ -29,12 +31,19 @@ class HomePageState extends State<HomePage> {
   final double initialChildSize = 0.20;
   final double minChildSize = 0.20;
   final double maxChildSize = .90;
+  final isMobile = Platform.isIOS || Platform.isAndroid;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    Provider.of<ApiInterface>(context, listen: false).loadStops();
+    Provider.of<ApiInterface>(context, listen: false).loadStops(
+        callback: (errorString) {
+      if (errorString.isNotEmpty) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(errorString)));
+      }
+    });
   }
 
   @override
@@ -46,7 +55,12 @@ class HomePageState extends State<HomePage> {
         children: [
           Stack(
             children: [
-              const MapView(),
+              isMobile
+                  ? const MapView()
+                  : Image.asset(
+                      'assets/images/appleMap.jpg',
+                      fit: BoxFit.cover,
+                    ),
               SafeArea(
                 child: Align(
                     alignment: Alignment.topRight,
@@ -70,36 +84,6 @@ class HomePageState extends State<HomePage> {
                       ),
                     )),
               ),
-              Center(
-                  child: Container(
-                decoration: BoxDecoration(boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
-                    blurRadius: 7,
-                    offset: const Offset(0, 4), // changes position of shadow
-                  ),
-                ]),
-                child: GestureDetector(
-                  onTap: () {
-                    showFullModal();
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: const BorderRadius.all(Radius.circular(10)),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text('Show Modal',
-                          style: GoogleFonts.inter(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          )),
-                    ),
-                  ),
-                ),
-              )),
             ],
           ),
           DraggableScrollableSheet(
@@ -200,6 +184,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
               const SizedBox(
                 height: 10,
               ),
+
               Consumer<SearchProvider>(
                 builder: (context, searchProvider, child) => ModalSearchBar(
                   onSearchTap: widget.searchTapped,
@@ -355,7 +340,12 @@ class _MainModalSheetState extends State<MainModalSheet> {
   void searchBusStopsByStopNumber(String trim) async {
     Provider.of<SearchProvider>(context, listen: false).searchResults =
         await Provider.of<ApiInterface>(context, listen: false)
-            .searchByStopCode(trim);
+            .searchByStopCode(trim, (errorString) {
+      if (errorString.isNotEmpty) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(errorString)));
+      }
+    });
   }
 
   void handleShowListTap(BuildContext context) {
