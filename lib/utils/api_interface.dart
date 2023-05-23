@@ -1,6 +1,4 @@
 //import http package
-import 'dart:convert';
-import 'dart:io';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/cupertino.dart';
@@ -150,23 +148,23 @@ class ApiInterface extends ChangeNotifier {
     return listStops.where((stop) => stop.stopCode.contains(trim)).toList();
   }
 
-  Future<List<dynamic>> getStopTimesById(String stopId) async {
-    //asyncronously load and read the file until the line with the stopId is found
+  // Future<List<dynamic>> getStopTimesById(String stopId) async {
+  //   //asyncronously load and read the file until the line with the stopId is found
 
-    //then read the next 2 lines and return them as a list of StopTimes
+  //   //then read the next 2 lines and return them as a list of StopTimes
 
-    File file = File('assets/gtfs_data/stop_times.txt');
-    await file
-        .openRead()
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .forEach((l) {
-      if (l.contains(stopId)) {
-        print(l);
-      }
-    });
-    return [''];
-  }
+  //   File file = File('assets/gtfs_data/stop_times.txt');
+  //   await file
+  //       .openRead()
+  //       .transform(utf8.decoder)
+  //       .transform(const LineSplitter())
+  //       .forEach((l) {
+  //     if (l.contains(stopId)) {
+  //       print(l);
+  //     }
+  //   });
+  //   return [''];
+  // }
 
   Future<int> getTripUpdates(
       {required Null Function(String error) errorCallback}) async {

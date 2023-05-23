@@ -3,15 +3,18 @@ import 'package:better_bus_dublin/utils/api_interface.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:better_bus_dublin/utils/providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_config/flutter_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FlutterConfig.loadEnvVariables();
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    print('No .env file found: $e');
+    debugPrint('No .env file found: $e');
   }
   await Hive.initFlutter();
   Hive.registerAdapter(StopAdapter());

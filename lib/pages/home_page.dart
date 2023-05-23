@@ -1,3 +1,4 @@
+import 'package:better_bus_dublin/components/map_view.dart';
 import 'package:better_bus_dublin/pages/saved_page.dart';
 import 'package:better_bus_dublin/pages/stop_details.dart';
 import 'package:better_bus_dublin/utils/api_interface.dart';
@@ -45,12 +46,7 @@ class HomePageState extends State<HomePage> {
         children: [
           Stack(
             children: [
-              Image.asset(
-                'assets/images/appleMap.jpg',
-                fit: BoxFit.cover,
-                height: double.infinity,
-                width: double.infinity,
-              ),
+              const MapView(),
               SafeArea(
                 child: Align(
                     alignment: Alignment.topRight,

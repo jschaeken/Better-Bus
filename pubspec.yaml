@@ -44,6 +44,8 @@ dependencies:
   http: ^0.13.6
   flutter_dotenv: ^5.0.2
   build_runner: ^2.4.4
+  platform_maps_flutter: ^1.0.2
+  flutter_config: ^2.0.0
 
 dev_dependencies:
   flutter_test:
