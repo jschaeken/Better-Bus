@@ -31,12 +31,14 @@ class HomePageState extends State<HomePage> {
   final double initialChildSize = 0.20;
   final double minChildSize = 0.20;
   final double maxChildSize = .90;
+  late final GlobalKey<ScaffoldState> scaffoldKey;
   final isMobile = Platform.isIOS || Platform.isAndroid;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    scaffoldKey = GlobalKey();
     initialStopsLoad();
     //post frame callback to show modal
   }
@@ -54,8 +56,10 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey,
       resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).colorScheme.primary,
+      drawer: const Drawer(),
       body: Stack(
         alignment: Alignment.bottomCenter,
         children: [
@@ -77,8 +81,10 @@ class HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               PressableIcon(
-                                icon: CupertinoIcons.settings,
-                                onPressed: () {},
+                                icon: CupertinoIcons.line_horizontal_3,
+                                onPressed: () {
+                                  handleOpenDrawer(context, scaffoldKey);
+                                },
                               )
                             ],
                           ),
@@ -137,6 +143,11 @@ class HomePageState extends State<HomePage> {
       duration: duration ?? animationDuration,
       curve: curve ?? animationCurve,
     );
+  }
+
+  void handleOpenDrawer(
+      BuildContext context, GlobalKey<ScaffoldState> scaffoldKey) {
+    scaffoldKey.currentState!.openDrawer();
   }
 }
 

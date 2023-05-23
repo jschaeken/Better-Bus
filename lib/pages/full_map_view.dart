@@ -38,6 +38,20 @@ class FullMapViewState extends State<FullMapView> {
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
               compassEnabled: true,
+              markers: {
+                Marker(
+                  markerId: MarkerId(widget.stop.stopId),
+                  position: LatLng(
+                    widget.stop.stopLat,
+                    widget.stop.stopLon,
+                  ),
+                  consumeTapEvents: true,
+                  infoWindow: InfoWindow(
+                    title: widget.stop.stopCode,
+                    snippet: widget.stop.stopName,
+                  ),
+                ),
+              },
             )
           : Image.asset(
               'assets/images/appleMap.jpg',

@@ -41,37 +41,33 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
             valueListenable: Hive.box<Stop>('savedStops').listenable(),
             builder: (context, value, child) {
               return IconButton(
-                onPressed: () {
-                  isInitialLoad = false;
-                  setState(() {});
-                  HapticFeedback.lightImpact();
-                  if (value.containsKey(widget.stop.stopCode)) {
-                    log('removing stop ${widget.stop.stopCode} from savedStops');
-                    Hive.box<Stop>('savedStops').delete(widget.stop.stopCode);
-                  } else {
-                    log('adding stop ${widget.stop.stopCode} to savedStops');
-                    Hive.box<Stop>('savedStops')
-                        .put(widget.stop.stopCode, widget.stop);
-                  }
-                },
-                icon: Icon(
-                  value.containsKey(widget.stop.stopCode)
-                      ? Icons.bookmark
-                      : Icons.bookmark_border,
-                  color: Theme.of(context).colorScheme.onSecondary,
-                  size: 28,
-                )
-                    .animate(
-                      target: value.containsKey(widget.stop.stopCode) &&
-                              !isInitialLoad
-                          ? 1
-                          : 0,
-                    )
-                    .scaleXY(end: 1.5)
-                    .shimmer()
-                    .then()
-                    .scaleXY(end: 1 / 1.5),
-              );
+                  onPressed: () {
+                    isInitialLoad = false;
+                    setState(() {});
+                    HapticFeedback.lightImpact();
+                    if (value.containsKey(widget.stop.stopCode)) {
+                      log('removing stop ${widget.stop.stopCode} from savedStops');
+                      Hive.box<Stop>('savedStops').delete(widget.stop.stopCode);
+                    } else {
+                      log('adding stop ${widget.stop.stopCode} to savedStops');
+                      Hive.box<Stop>('savedStops')
+                          .put(widget.stop.stopCode, widget.stop);
+                    }
+                  },
+                  icon: Icon(
+                    value.containsKey(widget.stop.stopCode)
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                    color: Theme.of(context).colorScheme.onSecondary,
+                    size: 28,
+                  )
+                      .animate(
+                        target: value.containsKey(widget.stop.stopCode) &&
+                                !isInitialLoad
+                            ? 1
+                            : 0,
+                      )
+                      .shimmer());
             },
           ),
         ],

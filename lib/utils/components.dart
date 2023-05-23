@@ -328,56 +328,52 @@ class ModalSearchBar extends StatelessWidget {
                 : isSearchLoading
                     ? const CircularProgressIndicator()
                     : Container()
-            : SizedBox(
-                height:
-                    searchResults.length > 3 ? 260 : searchResults.length * 90,
+            : Container(
+                alignment: Alignment.topCenter,
+                height: 260,
                 width: double.infinity,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: ListView.builder(
-                    itemCount: searchResults.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 6,
-                          child: ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              tileColor:
-                                  Theme.of(context).colorScheme.secondary,
-                              onTap: () {
-                                onTileTap(searchResults[index]);
-                              },
-                              title: Text(
-                                searchResults[index].stopCode,
-                                style: GoogleFonts.inter(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                searchResults[index].stopName,
-                                style: GoogleFonts.inter(
-                                  color:
-                                      Theme.of(context).colorScheme.onSecondary,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              trailing: const CircleAvatar(
-                                  foregroundImage: AssetImage(
-                                'assets/images/dublinBusLogo.jpg',
-                              ))),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: searchResults.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      );
-                    },
-                  ),
+                        elevation: 6,
+                        child: ListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            tileColor: Theme.of(context).colorScheme.secondary,
+                            onTap: () {
+                              onTileTap(searchResults[index]);
+                            },
+                            title: Text(
+                              searchResults[index].stopCode,
+                              style: GoogleFonts.inter(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              searchResults[index].stopName,
+                              style: GoogleFonts.inter(
+                                color:
+                                    Theme.of(context).colorScheme.onSecondary,
+                                fontSize: 15,
+                              ),
+                            ),
+                            trailing: const CircleAvatar(
+                                foregroundImage: AssetImage(
+                              'assets/images/dublinBusLogo.jpg',
+                            ))),
+                      ),
+                    );
+                  },
                 ),
               ),
       ],
