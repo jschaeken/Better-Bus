@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 
 class MapView extends StatelessWidget {
@@ -21,15 +22,18 @@ class MapView extends StatelessWidget {
             snippet: "Hi I'm a Platform Marker",
           ),
           onTap: () {
-            print("Marker tapped");
+            handleMarkerTap();
           },
         ),
       },
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
-      onTap: (location) => print('onTap: $location'),
-      onCameraMove: (cameraUpdate) => print('onCameraMove: $cameraUpdate'),
       compassEnabled: true,
     );
   }
+}
+
+void handleMarkerTap() {
+  print('Marker tapped');
+  HapticFeedback.lightImpact();
 }

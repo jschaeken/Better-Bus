@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:better_bus_dublin/pages/full_map_view.dart';
 import 'package:better_bus_dublin/utils/api_interface.dart';
 import 'package:better_bus_dublin/utils/components.dart';
 import 'package:better_bus_dublin/utils/models.dart';
@@ -112,7 +113,14 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
                       surfaceTintColor: MaterialStateProperty.all<Color>(
                           Theme.of(context).colorScheme.secondary),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                              builder: (context) =>
+                                  FullMapView(stop: widget.stop)));
+                    },
                     child: Row(children: [
                       Text(
                         'Show on map',

@@ -1,6 +1,7 @@
 //import http package
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:csv/csv.dart';
+import 'package:csv/csv_settings_autodetection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -124,19 +125,14 @@ class ApiInterface extends ChangeNotifier {
         .toList();
   }
 
-  int _longStringLength = -1;
-  int get longStringLength => _longStringLength;
-  set longStringLength(int value) {
-    _longStringLength = value;
-    notifyListeners();
-  }
-
   Future<void> loadStops({Function(String e)? callback}) async {
     try {
       String longString =
           await rootBundle.loadString('assets/gtfs_data/stops.txt');
-      longStringLength = longString.length;
-      _listStops = const CsvToListConverter().convert(longString).map((row) {
+      var d = const FirstOccurrenceSettingsDetector(eols: ['\r\n', '\n']);
+      _listStops = const CsvToListConverter()
+          .convert(longString, csvSettingsDetector: d)
+          .map((row) {
         return Stop(
           stopId: row[0].toString(),
           stopCode: row[1].toString(),
@@ -163,10 +159,8 @@ class ApiInterface extends ChangeNotifier {
         );
       }
       if (trim.isEmpty) {
-        errorCallback('Search term is empty');
         return [];
       }
-      errorCallback('Returning results for $trim');
       return listStops.where((stop) => stop.stopCode.contains(trim)).toList();
     } catch (e) {
       errorCallback(e.toString());

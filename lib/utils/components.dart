@@ -248,6 +248,11 @@ class ModalSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (searchResults.isEmpty &&
+        !isSearchLoading &&
+        controller.text.isNotEmpty) {
+      HapticFeedback.selectionClick();
+    }
     return Column(
       children: [
         TextField(
