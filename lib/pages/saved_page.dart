@@ -29,6 +29,7 @@ class SavedStopsPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            const SizedBox(height: 10),
             ValueListenableBuilder(
                 valueListenable: Hive.box<Stop>('savedStops').listenable(),
                 builder: (context, value, child) {
@@ -49,7 +50,11 @@ class SavedStopsPage extends StatelessWidget {
                                 title: BoldTileText(stop.stopCode),
                                 subtitle: Text(
                                   stop.stopName,
-                                  style: GoogleFonts.inter(),
+                                  style: GoogleFonts.inter(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSecondary,
+                                  ),
                                 ),
                                 trailing: IconButton(
                                   icon: const Icon(Icons.delete),

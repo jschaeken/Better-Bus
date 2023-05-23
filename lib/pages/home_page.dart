@@ -421,7 +421,7 @@ class _HomePageDrawerState extends State<HomePageDrawer> {
                     width: double.infinity,
                   ),
                   const BoldTileText(
-                    'Better Bus',
+                    'Better Bus Dublin',
                   ),
                   Container(
                     height: 6,
@@ -462,10 +462,12 @@ class _HomePageDrawerState extends State<HomePageDrawer> {
 }
 
 class GlobalState extends ChangeNotifier {
-  bool isDarkMode = false;
+  bool isDarkMode = ThemeMode.system == ThemeMode.dark;
 
   void toggleDarkMode() {
     isDarkMode = !isDarkMode;
+    //set theme mode value
+
     notifyListeners();
   }
 }

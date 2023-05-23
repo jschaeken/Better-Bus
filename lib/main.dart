@@ -42,32 +42,53 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Better Bus',
-        theme: ThemeData(
-          colorScheme: const ColorScheme(
-            brightness: Brightness.light,
-            primary: Color.fromARGB(255, 238, 238, 238),
-            onPrimary: Colors.black,
-            secondary: Color.fromARGB(255, 235, 235, 235),
-            onSecondary: Color.fromARGB(255, 62, 62, 62),
-            error: Color.fromARGB(255, 243, 87, 87),
-            onError: Color.fromARGB(255, 0, 0, 0),
-            background: Color.fromARGB(255, 255, 255, 255),
-            onBackground: Colors.black,
-            surface: Color.fromARGB(255, 151, 209, 156),
-            onSurface: Colors.black,
-            tertiary: Color.fromARGB(255, 88, 198, 97),
+    return Consumer<GlobalState>(
+      builder: (context, provider, child) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Better Bus Dublin',
+          theme: ThemeData(
+            colorScheme: const ColorScheme(
+              brightness: Brightness.light,
+              primary: Color.fromARGB(255, 238, 238, 238),
+              onPrimary: Colors.black,
+              secondary: Color.fromARGB(255, 235, 235, 235),
+              onSecondary: Color.fromARGB(255, 62, 62, 62),
+              error: Color.fromARGB(255, 243, 87, 87),
+              onError: Color.fromARGB(255, 0, 0, 0),
+              background: Color.fromARGB(255, 255, 255, 255),
+              onBackground: Colors.black,
+              surface: Color.fromARGB(255, 151, 209, 156),
+              onSurface: Colors.black,
+              tertiary: Color.fromARGB(255, 88, 198, 97),
+            ),
+            primaryColor: Colors.white,
+            useMaterial3: true,
           ),
-          primaryColor: Colors.white,
-          useMaterial3: true,
-        ),
-        scrollBehavior: const ScrollBehavior().copyWith(scrollbars: false),
-        home: const HomePage(),
-        routes: {
-          '/home': (context) => const HomePage(),
-        });
+          themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          darkTheme: ThemeData(
+            colorScheme: const ColorScheme(
+              brightness: Brightness.dark,
+              primary: Color.fromARGB(255, 0, 0, 0),
+              onPrimary: Colors.white,
+              secondary: Color.fromARGB(255, 48, 48, 48),
+              onSecondary: Color.fromARGB(255, 255, 255, 255),
+              error: Color.fromARGB(255, 243, 87, 87),
+              onError: Color.fromARGB(255, 0, 0, 0),
+              background: Color.fromARGB(255, 18, 18, 18),
+              onBackground: Colors.white,
+              surface: Color.fromARGB(255, 151, 209, 156),
+              onSurface: Colors.black,
+              tertiary: Color.fromARGB(255, 88, 198, 97),
+            ),
+            primaryColor: Colors.black,
+            useMaterial3: true,
+          ),
+          scrollBehavior: const ScrollBehavior().copyWith(scrollbars: false),
+          home: const HomePage(),
+          routes: {
+            '/home': (context) => const HomePage(),
+          }),
+    );
   }
 }
 

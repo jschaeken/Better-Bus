@@ -101,15 +101,14 @@ class BoldTileText extends StatelessWidget {
   const BoldTileText(
     this.text, {
     super.key,
-    // this.fontSize = Constants.headerFontSize,
-    this.color = Colors.black,
+    this.color,
     this.textAlign = TextAlign.start,
     this.height = 1.2,
   });
 
   final String text;
   // final double fontSize;
-  final Color color;
+  final Color? color;
   final TextAlign textAlign;
   final double height;
 
@@ -119,7 +118,7 @@ class BoldTileText extends StatelessWidget {
       text,
       textAlign: textAlign,
       style: GoogleFonts.inter(
-        color: color,
+        color: color ?? Theme.of(context).colorScheme.onPrimary,
         fontSize: Constants.headerFontSize,
         height: height,
         fontWeight: FontWeight.bold,
@@ -264,12 +263,15 @@ class ModalSearchBar extends StatelessWidget {
                 height: 260,
                 width: double.infinity,
                 child: ListView.builder(
+                  padding: const EdgeInsets.all(0),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   itemCount: searchResults.length,
                   itemBuilder: (context, index) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      padding: index == 0
+                          ? const EdgeInsets.only(top: 12, bottom: 3)
+                          : const EdgeInsets.symmetric(vertical: 3),
                       child: Card(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -326,7 +328,7 @@ class PressableIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.primary,
       borderRadius: BorderRadius.circular(100),
       child: InkWell(
         borderRadius: BorderRadius.circular(100),
@@ -338,7 +340,7 @@ class PressableIcon extends StatelessWidget {
           backgroundColor: Colors.transparent,
           child: Icon(
             icon,
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSecondary,
             size: 25,
           ),
         ),

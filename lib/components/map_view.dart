@@ -8,8 +8,8 @@ class MapView extends StatelessWidget {
   Widget build(BuildContext context) {
     return const PlatformMap(
       initialCameraPosition: CameraPosition(
-        target: LatLng(53.3498, 6.2603),
-        zoom: 17.0,
+        target: LatLng(53.3498, -6.2603),
+        zoom: 12.0,
       ),
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
