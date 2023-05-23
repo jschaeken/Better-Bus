@@ -31,6 +31,9 @@ void main() async {
     ChangeNotifierProvider<ApiInterface>(
       create: (_) => ApiInterface(),
     ),
+    ChangeNotifierProvider<GlobalState>(
+      create: (_) => GlobalState(),
+    )
   ], child: const MyApp()));
 }
 

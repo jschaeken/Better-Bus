@@ -1,3 +1,4 @@
+import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,7 +72,7 @@ class SavedStopTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    BoldTileText(stopNumber, fontSize: 25),
+                    BoldTileText(stopNumber),
                   ],
                 ),
                 const SizedBox(
@@ -79,92 +80,14 @@ class SavedStopTile extends StatelessWidget {
                 ),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: BoldTileText(
+                  child: Text(
                     busStopNickname,
                     textAlign: TextAlign.start,
-                    fontSize: 15,
-                    color: Theme.of(context).colorScheme.onSecondary,
+                    style: GoogleFonts.inter(
+                      color: Theme.of(context).colorScheme.onSecondary,
+                    ),
                   ),
                 ),
-                const Spacer(),
-                //Live Bus Times
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    //Live icon
-                    Icon(
-                      CupertinoIcons.dot_radiowaves_left_right,
-                      color: Theme.of(context).colorScheme.tertiary,
-                      size: 25,
-                    )
-                        .animate(
-                          onPlay: (controller) =>
-                              controller.repeat(reverse: true),
-                        )
-                        .fade()
-                        .then(delay: 1000.ms),
-                    BoldTileText(
-                      'Live',
-                      fontSize: 15,
-                      color: Theme.of(context).colorScheme.tertiary,
-                    ),
-                  ],
-                ),
-                Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        BoldTileText(
-                          '47',
-                          fontSize: 20,
-                          color: Theme.of(context).colorScheme.onSecondary,
-                        ),
-                        BoldTileText(
-                          '1 min',
-                          fontSize: 15,
-                          color: Theme.of(context).colorScheme.onSecondary,
-                          textAlign: TextAlign.end,
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          BoldTileText(
-                            '46a',
-                            fontSize: 20,
-                            color: Theme.of(context).colorScheme.onSecondary,
-                          ),
-                          BoldTileText(
-                            '8 mins',
-                            fontSize: 15,
-                            color: Theme.of(context).colorScheme.onSecondary,
-                            textAlign: TextAlign.end,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        BoldTileText(
-                          '118',
-                          fontSize: 20,
-                          color: Theme.of(context).colorScheme.onSecondary,
-                        ),
-                        BoldTileText(
-                          '10 mins',
-                          fontSize: 15,
-                          color: Theme.of(context).colorScheme.onSecondary,
-                          textAlign: TextAlign.end,
-                        ),
-                      ],
-                    )
-                  ],
-                )
               ],
             ),
           ),
@@ -178,19 +101,17 @@ class BoldTileText extends StatelessWidget {
   const BoldTileText(
     this.text, {
     super.key,
-    this.fontSize = 25,
+    // this.fontSize = Constants.headerFontSize,
     this.color = Colors.black,
     this.textAlign = TextAlign.start,
     this.height = 1.2,
-    this.expand = false,
   });
 
   final String text;
-  final double fontSize;
+  // final double fontSize;
   final Color color;
   final TextAlign textAlign;
   final double height;
-  final bool expand;
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +120,7 @@ class BoldTileText extends StatelessWidget {
       textAlign: textAlign,
       style: GoogleFonts.inter(
         color: color,
-        fontSize: expand ? null : fontSize,
+        fontSize: Constants.headerFontSize,
         height: height,
         fontWeight: FontWeight.bold,
       ),
@@ -236,6 +157,7 @@ class ModalSearchBar extends StatelessWidget {
     required this.onSearchChanged,
     required this.onTileTap,
     this.isSearchLoading = false,
+    required this.focusNode,
     this.searchResults = const [],
   });
 
@@ -245,6 +167,7 @@ class ModalSearchBar extends StatelessWidget {
   final List<Stop> searchResults;
   final ValueChanged<Stop> onTileTap;
   final bool isSearchLoading;
+  final FocusNode focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -265,11 +188,17 @@ class ModalSearchBar extends StatelessWidget {
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
           ],
-          onTapOutside: (event) => FocusScope.of(context).unfocus(),
+          onTapOutside: (event) {
+            final FocusScopeNode currentScope = FocusScope.of(context);
+            if (!currentScope.hasPrimaryFocus && currentScope.hasFocus) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
+          },
+          focusNode: focusNode,
           keyboardType: TextInputType.number,
           style: GoogleFonts.inter(
             color: Theme.of(context).colorScheme.onPrimary,
-            fontSize: 22,
+            fontSize: Constants.headerFontSize,
             fontWeight: FontWeight.bold,
           ),
           decoration: InputDecoration(
@@ -286,17 +215,19 @@ class ModalSearchBar extends StatelessWidget {
             prefixIcon: const Icon(Icons.search),
             suffixIcon: controller.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.clear),
+                    icon: const Icon(CupertinoIcons.clear),
                     onPressed: () {
                       controller.clear();
                       onSearchChanged('');
+                      //requestFocus();
+                      FocusScope.of(context).requestFocus(focusNode);
                     },
                   )
                 : const SizedBox(),
             hintText: '7415',
             hintStyle: GoogleFonts.inter(
               color: Theme.of(context).colorScheme.onPrimary.withOpacity(.5),
-              fontSize: 22,
+              fontSize: Constants.headerFontSize,
               fontWeight: FontWeight.bold,
             ),
             contentPadding: const EdgeInsets.symmetric(
@@ -320,7 +251,7 @@ class ModalSearchBar extends StatelessWidget {
                         'No Stops Found',
                         style: GoogleFonts.inter(
                           color: Theme.of(context).colorScheme.onSecondary,
-                          fontSize: 17,
+                          fontSize: Constants.bodyFontSize,
                         ),
                       ).animate().shakeX(),
                     ),
@@ -333,7 +264,8 @@ class ModalSearchBar extends StatelessWidget {
                 height: 260,
                 width: double.infinity,
                 child: ListView.builder(
-                  shrinkWrap: true,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   itemCount: searchResults.length,
                   itemBuilder: (context, index) {
                     return Padding(
@@ -355,7 +287,7 @@ class ModalSearchBar extends StatelessWidget {
                               searchResults[index].stopCode,
                               style: GoogleFonts.inter(
                                 color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 22,
+                                fontSize: Constants.headerFontSize,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -364,7 +296,7 @@ class ModalSearchBar extends StatelessWidget {
                               style: GoogleFonts.inter(
                                 color:
                                     Theme.of(context).colorScheme.onSecondary,
-                                fontSize: 15,
+                                fontSize: Constants.bodyFontSize,
                               ),
                             ),
                             trailing: const CircleAvatar(

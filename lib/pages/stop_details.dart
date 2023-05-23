@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:better_bus_dublin/pages/full_map_view.dart';
 import 'package:better_bus_dublin/utils/api_interface.dart';
 import 'package:better_bus_dublin/utils/components.dart';
+import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -21,9 +22,28 @@ class StopDetailsPage extends StatefulWidget {
 
 class _StopDetailsPageState extends State<StopDetailsPage> {
   bool isInitialLoad = true;
+  Widget noticeWidget = const SizedBox();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if (widget.stop.notice != null) {
+      noticeWidget = NoticeBox(
+        widget.stop.notice!,
+        () {
+          setState(() {
+            noticeWidget = const SizedBox();
+          });
+        },
+      );
+    } else {
+      noticeWidget = const SizedBox();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    log('stop details page - stopId: ${widget.stop.stopId}');
     return Scaffold(
       appBar: AppBar(
         shape: const RoundedRectangleBorder(
@@ -41,33 +61,40 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
             valueListenable: Hive.box<Stop>('savedStops').listenable(),
             builder: (context, value, child) {
               return IconButton(
-                  onPressed: () {
-                    isInitialLoad = false;
-                    setState(() {});
-                    HapticFeedback.lightImpact();
-                    if (value.containsKey(widget.stop.stopCode)) {
-                      log('removing stop ${widget.stop.stopCode} from savedStops');
-                      Hive.box<Stop>('savedStops').delete(widget.stop.stopCode);
-                    } else {
-                      log('adding stop ${widget.stop.stopCode} to savedStops');
-                      Hive.box<Stop>('savedStops')
-                          .put(widget.stop.stopCode, widget.stop);
-                    }
-                  },
-                  icon: Icon(
-                    value.containsKey(widget.stop.stopCode)
-                        ? Icons.bookmark
-                        : Icons.bookmark_border,
-                    color: Theme.of(context).colorScheme.onSecondary,
-                    size: 28,
-                  )
-                      .animate(
-                        target: value.containsKey(widget.stop.stopCode) &&
-                                !isInitialLoad
-                            ? 1
-                            : 0,
-                      )
-                      .shimmer());
+                onPressed: () {
+                  isInitialLoad = false;
+                  setState(() {});
+                  HapticFeedback.lightImpact();
+                  if (value.containsKey(widget.stop.stopCode)) {
+                    log('removing stop ${widget.stop.stopCode} from savedStops');
+                    Hive.box<Stop>('savedStops').delete(widget.stop.stopCode);
+                  } else {
+                    log('adding stop ${widget.stop.stopCode} to savedStops');
+                    Hive.box<Stop>('savedStops')
+                        .put(widget.stop.stopCode, widget.stop);
+                  }
+                },
+                icon: SizedBox(
+                  child: value.containsKey(widget.stop.stopCode)
+                      ? Icon(
+                          Icons.bookmark,
+                          color: Theme.of(context).colorScheme.tertiary,
+                          size: 28,
+                        )
+                      : Icon(
+                          Icons.bookmark_outline,
+                          color: Theme.of(context).colorScheme.onSecondary,
+                          size: 28,
+                        ),
+                )
+                    .animate(
+                      target: value.containsKey(widget.stop.stopCode) &&
+                              !isInitialLoad
+                          ? 1
+                          : 0,
+                    )
+                    .shimmer(),
+              );
             },
           ),
         ],
@@ -89,26 +116,10 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         BoldTileText(widget.stop.stopName),
-                        BoldTileText(
-                          'Stop Id: ${widget.stop.stopId}',
-                          color: Theme.of(context).colorScheme.onSecondary,
-                          fontSize: 15,
-                        ),
                       ],
                     ),
                   ),
-                  TextButton(
-                    style: ButtonStyle(
-                      shadowColor: MaterialStateProperty.all<Color>(
-                          Theme.of(context).colorScheme.onPrimary),
-                      foregroundColor: MaterialStateProperty.all<Color>(
-                          Theme.of(context).colorScheme.tertiary),
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          Theme.of(context).colorScheme.secondary),
-                      elevation: MaterialStateProperty.all<double>(6),
-                      surfaceTintColor: MaterialStateProperty.all<Color>(
-                          Theme.of(context).colorScheme.secondary),
-                    ),
+                  ElevatedButton(
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       Navigator.push(
@@ -128,7 +139,10 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
                       const SizedBox(
                         width: 5,
                       ),
-                      const Icon(CupertinoIcons.map_pin_ellipse),
+                      Icon(
+                        CupertinoIcons.map_pin_ellipse,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ]),
                   ),
                 ],
@@ -154,38 +168,30 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
                 height: 20,
               ),
               //notice
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  //iocn
-                  Icon(
-                    Icons.warning_rounded,
-                    color: Theme.of(context).colorScheme.error,
-                    size: 30,
-                  ),
-                  const SizedBox(
-                    width: 5,
-                  ),
-                  BoldTileText(
-                    'Notice',
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              const NoticeBox(
-                'Due to roadworks, stop 1234 will be closed from 12:00 to 14:00 on 12/12/2021',
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: noticeWidget,
+                transitionBuilder: (child, animation) {
+                  return SizeTransition(
+                    sizeFactor: animation,
+                    child: child,
+                  );
+                },
               ),
               const SizedBox(
                 height: 20,
               ),
               //Times
-              const Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  BoldTileText('Times'),
+                  const BoldTileText('Times'),
+                  Text('Real Time Data Updated: X mins ago',
+                      style: GoogleFonts.inter(
+                        color: Theme.of(context).colorScheme.onSecondary,
+                        fontSize: Constants.bodyFontSize,
+                      ))
                 ],
               ),
               const SizedBox(
@@ -218,65 +224,53 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
                                         Theme.of(context).colorScheme.secondary,
                                     elevation: 0,
                                     child: ListTile(
-                                      title: BoldTileText(
-                                        '${listBuses.data![index].vehicleInfo.routeShortName} to ${listBuses.data![index].vehicleInfo.tripHeadsign}',
-                                        fontSize: 16,
+                                      title: Row(
+                                        children: [
+                                          ElevatedButton(
+                                            onPressed: () {},
+                                            child: Text(
+                                              listBuses.data![index].vehicleInfo
+                                                  .routeShortName,
+                                              style: GoogleFonts.inter(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize:
+                                                      Constants.bodyFontSize),
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                            width: 10,
+                                          ),
+                                          Flexible(
+                                            child: Text(
+                                              listBuses.data![index].vehicleInfo
+                                                  .tripHeadsign,
+                                              style: GoogleFonts.inter(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize:
+                                                      Constants.bodyFontSize),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          BoldTileText(
+                                          Text(
                                             '$time ${time == 1 ? 'min' : 'mins'}',
-                                            fontSize: 18,
+                                            style: GoogleFonts.inter(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: Constants.bodyFontSize,
+                                            ),
                                           ),
-                                          listBuses.data![index].scheduleType !=
-                                                  ScheduleType.live
-                                              ? Container()
-                                              : Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.end,
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    const SizedBox(
-                                                      width: 10,
-                                                    ),
-                                                    Container(
-                                                      width: 10,
-                                                      height: 10,
-                                                      decoration: BoxDecoration(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .tertiary,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                          100,
-                                                        ),
-                                                      ),
-                                                    )
-                                                        .animate(
-                                                            onPlay: (controller) =>
-                                                                controller.repeat(
-                                                                    reverse:
-                                                                        true))
-                                                        .fade(
-                                                            duration: 1000.ms),
-                                                    const SizedBox(
-                                                      width: 5,
-                                                    ),
-                                                    Text(
-                                                      'LIVE',
-                                                      style: GoogleFonts.inter(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .tertiary,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    )
-                                                  ],
-                                                ),
                                         ],
                                       ),
                                     ),
@@ -302,9 +296,10 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
 }
 
 class NoticeBox extends StatelessWidget {
-  const NoticeBox(this.notice, {super.key});
+  const NoticeBox(this.notice, this.closeCallback, {super.key});
 
   final String notice;
+  final Function closeCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -314,77 +309,47 @@ class NoticeBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         color: Theme.of(context).colorScheme.error.withOpacity(.2),
       ),
-      child: Text(
-        notice,
-        style: GoogleFonts.inter(
-          color: Theme.of(context).colorScheme.onError,
-          fontSize: 15,
-        ),
-      ),
-    );
-  }
-}
-
-class BusTimeTile extends StatelessWidget {
-  const BusTimeTile({
-    super.key,
-    required this.index,
-  });
-
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      color: Theme.of(context).colorScheme.secondary,
-      child: ListTile(
-        title: BoldTileText(
-          'Bus ${index + 1}',
-          fontSize: 18,
-        ),
-        subtitle: Text(
-          'Towards: [HeadSign]',
-          style: GoogleFonts.inter(),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            const BoldTileText(
-              '5 mins',
-              fontSize: 18,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              //iocn
+              Icon(
+                Icons.warning_rounded,
+                color: Theme.of(context).colorScheme.error,
+                size: 30,
+              ),
+              const SizedBox(
+                width: 5,
+              ),
+              BoldTileText(
+                'Notice',
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () {
+                  closeCallback();
+                },
+                icon: Icon(
+                  CupertinoIcons.xmark,
+                  color: Theme.of(context).colorScheme.onError.withOpacity(.5),
+                ),
+              )
+            ],
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          Text(
+            notice,
+            style: GoogleFonts.inter(
+              color: Theme.of(context).colorScheme.onError,
+              fontSize: Constants.bodyFontSize,
             ),
-            index % 2 == 0
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'LIVE',
-                        style: GoogleFonts.inter(
-                          color: Theme.of(context).colorScheme.tertiary,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 5,
-                      ),
-                      Icon(
-                        Icons.circle,
-                        color: Theme.of(context).colorScheme.tertiary,
-                        size: 12,
-                      )
-                          .animate(
-                            onPlay: (controller) =>
-                                controller.repeat(reverse: true),
-                          )
-                          .fade()
-                          .then(delay: 1000.ms)
-                    ],
-                  )
-                : Text('SCHEDULED', style: GoogleFonts.inter()),
-          ],
-        ),
+          )
+        ],
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:better_bus_dublin/pages/saved_page.dart';
 import 'package:better_bus_dublin/pages/stop_details.dart';
 import 'package:better_bus_dublin/utils/api_interface.dart';
 import 'package:better_bus_dublin/utils/components.dart';
+import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:better_bus_dublin/utils/providers.dart';
 import 'package:flutter/cupertino.dart';
@@ -24,7 +25,7 @@ class HomePageState extends State<HomePage> {
   DraggableScrollableController draggableScrollController =
       DraggableScrollableController();
 
-  final Duration animationDuration = const Duration(milliseconds: 150);
+  final Duration animationDuration = const Duration(milliseconds: 300);
   final double modalSearchHeight = .8;
   final Curve animationCurve = Curves.fastOutSlowIn;
   final List<double> snapSizes = [.20, .7];
@@ -40,7 +41,6 @@ class HomePageState extends State<HomePage> {
     super.initState();
     scaffoldKey = GlobalKey();
     initialStopsLoad();
-    //post frame callback to show modal
   }
 
   initialStopsLoad() async {
@@ -59,7 +59,7 @@ class HomePageState extends State<HomePage> {
       key: scaffoldKey,
       resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).colorScheme.primary,
-      drawer: const Drawer(),
+      drawer: const HomePageDrawer(),
       body: Stack(
         alignment: Alignment.bottomCenter,
         children: [
@@ -124,7 +124,12 @@ class HomePageState extends State<HomePage> {
                     child: Container(
                       color: Theme.of(context).colorScheme.background,
                       child: MainModalSheet(
-                        searchTapped: () => showFullModal(),
+                        searchTapped: () {
+                          if (draggableScrollController.size <
+                              modalSearchHeight) {
+                            showFullModal();
+                          }
+                        },
                       ),
                     ),
                   ),
@@ -147,7 +152,9 @@ class HomePageState extends State<HomePage> {
 
   void handleOpenDrawer(
       BuildContext context, GlobalKey<ScaffoldState> scaffoldKey) {
+    //unfocus
     scaffoldKey.currentState!.openDrawer();
+    FocusScope.of(context).unfocus();
   }
 }
 
@@ -165,11 +172,17 @@ class MainModalSheet extends StatefulWidget {
 
 class _MainModalSheetState extends State<MainModalSheet> {
   final TextEditingController busStopSearchController = TextEditingController();
+  final FocusNode focusNode = FocusNode();
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    busStopSearchController.addListener(() {
+      if (busStopSearchController.text.isNotEmpty) {
+        widget.searchTapped();
+      }
+    });
   }
 
   @override
@@ -209,6 +222,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                     searchBusStopsByStopNumber(value.trim());
                     searchProvider.stopSeatchLoading();
                   },
+                  focusNode: focusNode,
                   onTileTap: (stop) {
                     handleStopTileTap(stop);
                   },
@@ -265,7 +279,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .tertiary,
-                                            fontSize: 17,
+                                            fontSize: Constants.bodyFontSize,
                                             fontWeight: FontWeight.bold,
                                           )),
                                       Icon(
@@ -290,28 +304,31 @@ class _MainModalSheetState extends State<MainModalSheet> {
                       height: 200,
                       width: double.infinity,
                       child: Center(
-                          child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'No Saved Stops Yet',
-                            style: GoogleFonts.inter(
-                              color: Theme.of(context).colorScheme.onSecondary,
-                              fontSize: 17,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'No Saved Stops Yet',
+                              style: GoogleFonts.inter(
+                                color:
+                                    Theme.of(context).colorScheme.onSecondary,
+                                fontSize: Constants.bodyFontSize,
+                              ),
                             ),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Icon(
-                            Icons.heart_broken_rounded,
-                            color: Theme.of(context).colorScheme.onSecondary,
-                            size: 30,
-                          )
-                        ],
-                      )))
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            Icon(
+                              Icons.heart_broken_rounded,
+                              color: Theme.of(context).colorScheme.onSecondary,
+                              size: 30,
+                            )
+                          ],
+                        ),
+                      ),
+                    )
                   : SizedBox(
-                      height: 250,
+                      height: 130,
                       width: MediaQuery.of(context).size.width,
                       child: ListView.separated(
                           scrollDirection: Axis.horizontal,
@@ -321,10 +338,11 @@ class _MainModalSheetState extends State<MainModalSheet> {
                                 ? const SizedBox()
                                 : Padding(
                                     padding: EdgeInsets.only(
-                                        left: index == 0 ? 16 : 0,
-                                        right: index == box.length ? 16 : 0,
-                                        top: 15,
-                                        bottom: 15),
+                                      left: index == 0 ? 16 : 0,
+                                      right: index == box.length - 1 ? 16 : 0,
+                                      top: 15,
+                                      bottom: 15,
+                                    ),
                                     child: SavedStopTile(
                                       stopNumber: box.getAt(index)!.stopCode,
                                       busCompany: BusCompany.dublinBus,
@@ -372,8 +390,82 @@ class _MainModalSheetState extends State<MainModalSheet> {
   }
 
   void handleStopTileTap(Stop stop) {
-    busStopSearchController.text = stop.stopCode;
     Navigator.push(context,
         CupertinoPageRoute(builder: (context) => StopDetailsPage(stop: stop)));
+  }
+}
+
+class HomePageDrawer extends StatefulWidget {
+  const HomePageDrawer({super.key});
+
+  @override
+  State<HomePageDrawer> createState() => _HomePageDrawerState();
+}
+
+class _HomePageDrawerState extends State<HomePageDrawer> {
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: Theme.of(context).colorScheme.secondary,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    height: 30,
+                    width: double.infinity,
+                  ),
+                  const BoldTileText(
+                    'Better Bus',
+                  ),
+                  Container(
+                    height: 6,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const BoldTileText(
+                        'Dark Mode',
+                      ),
+                      Consumer<GlobalState>(
+                        builder: (context, value, child) => Switch(
+                          activeTrackColor:
+                              Theme.of(context).colorScheme.tertiary,
+                          value: value.isDarkMode,
+                          onChanged: (_) {
+                            value.toggleDarkMode();
+                          },
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class GlobalState extends ChangeNotifier {
+  bool isDarkMode = false;
+
+  void toggleDarkMode() {
+    isDarkMode = !isDarkMode;
+    notifyListeners();
   }
 }
