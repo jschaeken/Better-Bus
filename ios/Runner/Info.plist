@@ -46,7 +46,7 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>io.flutter.embedded_views_preview</key>
-	<YES/>
+	<string>YES</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>To locate your position on the map and to show you the nearest bus stops to you</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
