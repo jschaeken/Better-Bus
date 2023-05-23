@@ -37,7 +37,12 @@ class HomePageState extends State<HomePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    Provider.of<ApiInterface>(context, listen: false).loadStops(
+    initialStopsLoad();
+    //post frame callback to show modal
+  }
+
+  initialStopsLoad() async {
+    await Provider.of<ApiInterface>(context, listen: false).loadStops(
         callback: (errorString) {
       if (errorString.isNotEmpty) {
         ScaffoldMessenger.of(context)
@@ -57,11 +62,8 @@ class HomePageState extends State<HomePage> {
             children: [
               isMobile
                   ? const MapView()
-                  : FittedBox(
-                      fit: BoxFit.cover,
-                      child: Image.asset(
-                        'assets/images/appleMap.jpg',
-                      ),
+                  : Image.asset(
+                      'assets/images/appleMap.jpg',
                     ),
               SafeArea(
                 child: Align(
@@ -71,6 +73,20 @@ class HomePageState extends State<HomePage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          GestureDetector(
+                            onTap: () => setState(() {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Text(
+                                    'Stops Loaded: ${Provider.of<ApiInterface>(context, listen: false).listStops.length}'),
+                              ));
+                            }),
+                            child: Container(
+                                color: Colors.red,
+                                child: Text(
+                                  'Stops Loaded: ${Provider.of<ApiInterface>(context).listStops.length}',
+                                )),
+                          ),
                           PressableIcon(
                             icon: CupertinoIcons.location_fill,
                             onPressed: () {},
