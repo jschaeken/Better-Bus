@@ -146,17 +146,24 @@ class ApiInterface extends ChangeNotifier {
 
   Future<List<Stop>> searchByStopCode(
       String trim, Function(String e) errorCallback) async {
-    if (listStops.isEmpty) {
-      await loadStops(
-        callback: (e) {
-          errorCallback(e);
-        },
-      );
-    }
-    if (trim.isEmpty) {
+    try {
+      if (listStops.isEmpty) {
+        await loadStops(
+          callback: (e) {
+            errorCallback(e);
+          },
+        );
+      }
+      if (trim.isEmpty) {
+        errorCallback('Search term is empty');
+        return [];
+      }
+      errorCallback('Returning results for $trim');
+      return listStops.where((stop) => stop.stopCode.contains(trim)).toList();
+    } catch (e) {
+      errorCallback(e.toString());
       return [];
     }
-    return listStops.where((stop) => stop.stopCode.contains(trim)).toList();
   }
 
   // Future<List<dynamic>> getStopTimesById(String stopId) async {

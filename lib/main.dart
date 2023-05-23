@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:better_bus_dublin/pages/home_page.dart';
 import 'package:better_bus_dublin/utils/api_interface.dart';
 import 'package:better_bus_dublin/utils/models.dart';
@@ -10,7 +12,9 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FlutterConfig.loadEnvVariables();
+  if (Platform.isAndroid) {
+    await FlutterConfig.loadEnvVariables();
+  }
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {

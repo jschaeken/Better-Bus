@@ -57,9 +57,11 @@ class HomePageState extends State<HomePage> {
             children: [
               isMobile
                   ? const MapView()
-                  : Image.asset(
-                      'assets/images/appleMap.jpg',
+                  : FittedBox(
                       fit: BoxFit.cover,
+                      child: Image.asset(
+                        'assets/images/appleMap.jpg',
+                      ),
                     ),
               SafeArea(
                 child: Align(
@@ -342,6 +344,8 @@ class _MainModalSheetState extends State<MainModalSheet> {
         await Provider.of<ApiInterface>(context, listen: false)
             .searchByStopCode(trim, (errorString) {
       if (errorString.isNotEmpty) {
+        //cancel all snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(errorString)));
       }
