@@ -42,8 +42,3 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
-#gtfs data
-!assets/gtfs_data
-assets/gtfs_data/*
-!assets/gtfs_data/stops.txt

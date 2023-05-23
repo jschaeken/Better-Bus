@@ -235,6 +235,7 @@ class ModalSearchBar extends StatelessWidget {
     required this.controller,
     required this.onSearchChanged,
     required this.onTileTap,
+    this.isSearchLoading = false,
     this.searchResults = const [],
   });
 
@@ -243,6 +244,7 @@ class ModalSearchBar extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final List<Stop> searchResults;
   final ValueChanged<Stop> onTileTap;
+  final bool isSearchLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -258,6 +260,7 @@ class ModalSearchBar extends StatelessWidget {
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
           ],
+          onTapOutside: (event) => FocusScope.of(context).unfocus(),
           keyboardType: TextInputType.number,
           style: GoogleFonts.inter(
             color: Theme.of(context).colorScheme.onPrimary,
@@ -304,7 +307,22 @@ class ModalSearchBar extends StatelessWidget {
 
         //Search results
         searchResults.isEmpty
-            ? Container()
+            ? controller.text.isNotEmpty
+                ? SizedBox(
+                    height: 90,
+                    child: Center(
+                      child: Text(
+                        'No Stops Found',
+                        style: GoogleFonts.inter(
+                          color: Theme.of(context).colorScheme.onSecondary,
+                          fontSize: 17,
+                        ),
+                      ).animate().shakeX(),
+                    ),
+                  )
+                : isSearchLoading
+                    ? const CircularProgressIndicator()
+                    : Container()
             : SizedBox(
                 height:
                     searchResults.length > 3 ? 260 : searchResults.length * 90,

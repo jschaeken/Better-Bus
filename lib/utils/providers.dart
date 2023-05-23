@@ -8,4 +8,19 @@ class SearchProvider extends ChangeNotifier {
     _searchResults = value;
     notifyListeners();
   }
+
+  bool _isSearching = false;
+  bool get isSearching => _isSearching;
+  set isSearching(bool value) {
+    _isSearching = value;
+    notifyListeners();
+  }
+
+  void startSearchLoading() {
+    isSearching = true;
+  }
+
+  void stopSeatchLoading() {
+    isSearching = false;
+  }
 }

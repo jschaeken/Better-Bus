@@ -51,27 +51,29 @@ class HomePageState extends State<HomePage> {
                 height: double.infinity,
                 width: double.infinity,
               ),
-              Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        PressableIcon(
-                          icon: CupertinoIcons.location_fill,
-                          onPressed: () {},
-                        ),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        PressableIcon(
-                          icon: CupertinoIcons.settings,
-                          onPressed: () {},
-                        )
-                      ],
-                    ),
-                  )),
+              SafeArea(
+                child: Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          PressableIcon(
+                            icon: CupertinoIcons.location_fill,
+                            onPressed: () {},
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          PressableIcon(
+                            icon: CupertinoIcons.settings,
+                            onPressed: () {},
+                          )
+                        ],
+                      ),
+                    )),
+              ),
               Center(
                   child: Container(
                 decoration: BoxDecoration(boxShadow: [
@@ -175,8 +177,6 @@ class _MainModalSheetState extends State<MainModalSheet> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    // Hive.box<Stop>('savedStops').deleteFromDisk();
-    // log('Deleted Hive Box');
   }
 
   @override
@@ -209,8 +209,11 @@ class _MainModalSheetState extends State<MainModalSheet> {
                   onSearchTap: widget.searchTapped,
                   controller: busStopSearchController,
                   searchResults: searchProvider.searchResults,
+                  isSearchLoading: searchProvider.isSearching,
                   onSearchChanged: (String value) {
+                    searchProvider.startSearchLoading();
                     searchBusStopsByStopNumber(value.trim());
+                    searchProvider.stopSeatchLoading();
                   },
                   onTileTap: (stop) {
                     handleStopTileTap(stop);
@@ -222,7 +225,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
           ),
         ),
         const SizedBox(
-          height: 20,
+          height: 30,
         ),
         ValueListenableBuilder(
           valueListenable: Hive.box<Stop>('savedStops').listenable(),
