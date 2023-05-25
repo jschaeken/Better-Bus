@@ -7,4 +7,7 @@ class Constants {
   //spacing
   static const double headerSpacing = 10.0;
   static const double subHeaderSpacing = 8.0;
+
+  //api
+  static const String baseUrl = 'https://better-bus-dublin.nw.r.appspot.com/';
 }

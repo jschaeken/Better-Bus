@@ -1,4 +1,9 @@
 //import http package
+import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
+
+import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:csv/csv.dart';
 import 'package:csv/csv_settings_autodetection.dart';
@@ -53,65 +58,6 @@ class ApiInterface extends ChangeNotifier {
     notifyListeners();
   }
 
-  getLiveData(ApiType apiType) async {
-    //a switch statement to assign a string to the url variable based on the apiType
-    String apiSuffix = '';
-    switch (apiType) {
-      case ApiType.tripUpdates:
-        apiSuffix = 'TripUpdates?format=js';
-        break;
-      case ApiType.vehiclePositions:
-        apiSuffix = 'Vehicles?format=js';
-        break;
-      case ApiType.gtfsr:
-        break;
-    }
-
-    final url = Uri.parse(baseUrl + apiSuffix);
-    final response = await http.get(
-      url,
-      headers: {
-        'Cache-Control': 'no-cache',
-        'x-api-key': dotenv.env['NTA_API_KEY']!,
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final feedMessage = gtfs.FeedMessage.fromBuffer(response.bodyBytes);
-
-      print('Number of entities: ${feedMessage.entity.length}.');
-      switch (apiType) {
-        case ApiType.tripUpdates:
-          break;
-        case ApiType.vehiclePositions:
-          List<VehicleInfo> tempList = [];
-          for (var entity in feedMessage.entity) {
-            final vehiclePosition = entity.vehicle;
-            final vehicleInfo = VehicleInfo(
-              position: [
-                vehiclePosition.position.latitude,
-                vehiclePosition.position.longitude,
-              ],
-              routeId: vehiclePosition.trip.routeId,
-              tripId: vehiclePosition.trip.tripId,
-              vehicleId: vehiclePosition.vehicle.id,
-              agencyId: Agency.dublinBus,
-              routeShortName:
-                  'Unknown', //TODO: get route short name from route id
-              tripHeadsign: 'Unknown', //TODO: get trip headsign from trip id
-            );
-            tempList.add(vehicleInfo);
-          }
-          return tempList;
-        case ApiType.gtfsr:
-          break;
-      }
-    } else {
-      print(
-          'Request failed with status: ${response.statusCode}, ${response.body}.');
-    }
-  }
-
   Future<List<BusRoute>> loadRoutes() async {
     final longString =
         await rootBundle.loadString('assets/gtfs_data/routes.txt');
@@ -126,6 +72,7 @@ class ApiInterface extends ChangeNotifier {
   }
 
   Future<void> loadStops({Function(String e)? callback}) async {
+    log('loading stops');
     try {
       String longString =
           await rootBundle.loadString('assets/gtfs_data/stops.txt');
@@ -168,23 +115,54 @@ class ApiInterface extends ChangeNotifier {
     }
   }
 
-  // Future<List<dynamic>> getStopTimesById(String stopId) async {
-  //   //asyncronously load and read the file until the line with the stopId is found
+  bool isLoadingInfo = false;
 
-  //   //then read the next 2 lines and return them as a list of StopTimes
-
-  //   File file = File('assets/gtfs_data/stop_times.txt');
-  //   await file
-  //       .openRead()
-  //       .transform(utf8.decoder)
-  //       .transform(const LineSplitter())
-  //       .forEach((l) {
-  //     if (l.contains(stopId)) {
-  //       print(l);
-  //     }
-  //   });
-  //   return [''];
-  // }
+  Future<List<BusRtpi>?> getStopBusTimes(
+      String stopId, Function(String e) errorCallback,
+      {String route = '47'}) async {
+    isLoadingInfo = true;
+    //start a timeout timer
+    final timer = Timer(const Duration(seconds: 10), () {
+      //if the timer is not cancelled, then the request has timed out
+      if (isLoadingInfo) {
+        errorCallback('Request timed out');
+        isLoadingInfo = false;
+        notifyListeners();
+      }
+    });
+    try {
+      final response = await http.get(Uri.parse(
+          '${Constants.baseUrl}getStopTimes?route=$route&stop_id=$stopId'));
+      if (response.statusCode != 200) {
+        timer.cancel();
+        errorCallback(jsonDecode(response.body)['error']);
+        isLoadingInfo = false;
+        notifyListeners();
+        return [];
+      } else if (response.statusCode == 200) {
+        timer.cancel();
+        isLoadingInfo = false;
+        notifyListeners();
+        final json = jsonDecode(response.body)['times'];
+        log('data updated successfully');
+        return json
+            .map<BusRtpi>((busRtpi) => BusRtpi(
+                departureMins: busRtpi['departure_mins'],
+                scheduleType: ScheduleType.scheduled,
+                vehicleInfo: VehicleInfo(
+                  routeShortName: route,
+                  tripHeadsign: busRtpi['destination'],
+                  tripId: busRtpi['trip_id'],
+                )))
+            .toList();
+      }
+    } catch (e) {
+      timer.cancel();
+      errorCallback(e.toString());
+    }
+    timer.cancel();
+    return null;
+  }
 
   Future<int> getTripUpdates(
       {required Null Function(String error) errorCallback}) async {
@@ -221,66 +199,5 @@ class ApiInterface extends ChangeNotifier {
       errorCallback(e.toString());
       return -1;
     }
-  }
-
-  Future<List<BusRtpi>> getTripUpdateByStopId(String stopId) async {
-    // return _listTripUpdates
-    //     .where((tripUpdate) => tripUpdate.stopId == stopId)
-    //     .toList();
-
-    //DEMO DATA
-    return [
-      BusRtpi(
-        arrivalTime: DateTime.now().add(const Duration(minutes: 2)),
-        departureTime: DateTime.now(),
-        scheduleType: ScheduleType.live,
-        vehicleInfo: VehicleInfo(
-          position: [
-            53.38383333,
-            -6.474637809,
-          ],
-          routeId: '123456789',
-          routeShortName: '47',
-          tripHeadsign: 'Poolbeg Street',
-          tripId: '234543',
-          vehicleId: '3454326',
-          agencyId: Agency.dublinBus,
-        ),
-      ),
-      BusRtpi(
-        arrivalTime: DateTime.now().add(const Duration(minutes: 7)),
-        departureTime: DateTime.now(),
-        scheduleType: ScheduleType.live,
-        vehicleInfo: VehicleInfo(
-          position: [
-            53.38383333,
-            -6.474637809,
-          ],
-          routeId: '123456789',
-          routeShortName: '47',
-          tripHeadsign: 'Poolbeg Street',
-          tripId: '234543',
-          vehicleId: '3454326',
-          agencyId: Agency.dublinBus,
-        ),
-      ),
-      BusRtpi(
-        arrivalTime: DateTime.now().add(const Duration(minutes: 17)),
-        departureTime: DateTime.now(),
-        scheduleType: ScheduleType.scheduled,
-        vehicleInfo: VehicleInfo(
-          position: [
-            53.38383333,
-            -6.474637809,
-          ],
-          routeId: '123456789',
-          routeShortName: '46a',
-          tripHeadsign: 'Dun Laoirghaire',
-          tripId: '234543',
-          vehicleId: '3454326',
-          agencyId: Agency.dublinBus,
-        ),
-      ),
-    ];
   }
 }

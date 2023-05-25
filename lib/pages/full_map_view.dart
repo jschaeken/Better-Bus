@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:better_bus_dublin/utils/components.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:flutter/material.dart';
 import 'package:platform_maps_flutter/platform_maps_flutter.dart';
@@ -18,14 +19,17 @@ class FullMapViewState extends State<FullMapView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.stop.stopCode,
-          style: const TextStyle(
-            color: Colors.black,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(15),
           ),
         ),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+        title: BoldTileText('Stop ${widget.stop.stopCode}'),
+        elevation: 6,
         automaticallyImplyLeading: true,
       ),
+      extendBodyBehindAppBar: true,
       body: (Platform.isIOS || Platform.isAndroid)
           ? PlatformMap(
               initialCameraPosition: CameraPosition(

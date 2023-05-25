@@ -26,22 +26,22 @@ class BusRoute {
 }
 
 class VehicleInfo {
-  List<double> position;
-  String routeId;
+  List<double>? position;
+  String? routeId;
   String tripId;
-  String vehicleId;
+  String? vehicleId;
   String routeShortName;
   String tripHeadsign;
-  Agency agencyId;
+  Agency? agencyId;
 
   VehicleInfo({
-    required this.position,
-    required this.routeId,
+    this.position,
+    this.routeId,
     required this.tripId,
-    required this.vehicleId,
+    this.vehicleId,
     required this.routeShortName,
     required this.tripHeadsign,
-    required this.agencyId,
+    this.agencyId,
   });
 }
 
@@ -123,14 +123,16 @@ class TripUpdate {
 class BusRtpi {
   VehicleInfo vehicleInfo;
   ScheduleType scheduleType;
-  DateTime arrivalTime;
-  DateTime departureTime;
+  DateTime? arrivalTime;
+  DateTime? departureTime;
+  int departureMins;
 
   BusRtpi({
     required this.vehicleInfo,
     required this.scheduleType,
-    required this.arrivalTime,
-    required this.departureTime,
+    this.arrivalTime,
+    this.departureTime,
+    required this.departureMins,
   });
 }
 
