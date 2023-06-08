@@ -47,6 +47,13 @@ class SavedStopsPage extends StatelessWidget {
                               elevation: 6,
                               color: Theme.of(context).colorScheme.secondary,
                               child: ListTile(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                leading: Icon(
+                                  CupertinoIcons.arrow_up_right_square,
+                                  size: 35,
+                                  color: Theme.of(context).colorScheme.tertiary,
+                                ),
                                 title: BoldTileText(stop.stopCode),
                                 subtitle: Text(
                                   stop.stopName,
@@ -57,11 +64,14 @@ class SavedStopsPage extends StatelessWidget {
                                   ),
                                 ),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.delete),
+                                  icon:
+                                      const Icon(Icons.bookmark_remove_rounded),
+                                  color: Theme.of(context).colorScheme.error,
                                   onPressed: () {
                                     Hive.box<Stop>('savedStops')
                                         .deleteAt(index);
                                   },
+                                  iconSize: 30,
                                 ),
                                 onTap: () {
                                   Navigator.push(

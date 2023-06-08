@@ -9,5 +9,5 @@ class Constants {
   static const double subHeaderSpacing = 8.0;
 
   //api
-  static const String baseUrl = 'https://better-bus-dublin.nw.r.appspot.com/';
+  static const String baseUrl = 'https://example.com/';
 }

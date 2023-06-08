@@ -25,13 +25,13 @@ class HomePageState extends State<HomePage> {
   DraggableScrollableController draggableScrollController =
       DraggableScrollableController();
 
-  final Duration animationDuration = const Duration(milliseconds: 300);
+  final Duration animationDuration = const Duration(milliseconds: 120);
   final double modalSearchHeight = .8;
-  final Curve animationCurve = Curves.fastOutSlowIn;
-  final List<double> snapSizes = [.20, .7];
+  final Curve animationCurve = Curves.easeInSine;
+  final List<double> snapSizes = [.20, .82];
   final double initialChildSize = 0.20;
   final double minChildSize = 0.20;
-  final double maxChildSize = .90;
+  final double maxChildSize = .82;
   late final GlobalKey<ScaffoldState> scaffoldKey;
   final isMobile = Platform.isIOS || Platform.isAndroid;
 
@@ -121,6 +121,7 @@ class HomePageState extends State<HomePage> {
                   ),
                   child: SingleChildScrollView(
                     controller: scrollController,
+                    physics: const NeverScrollableScrollPhysics(),
                     child: Container(
                       color: Theme.of(context).colorScheme.background,
                       child: MainModalSheet(
@@ -189,6 +190,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(
           width: double.infinity,
@@ -210,7 +212,6 @@ class _MainModalSheetState extends State<MainModalSheet> {
               const SizedBox(
                 height: 10,
               ),
-
               Consumer<SearchProvider>(
                 builder: (context, searchProvider, child) => ModalSearchBar(
                   onSearchTap: widget.searchTapped,
@@ -358,12 +359,12 @@ class _MainModalSheetState extends State<MainModalSheet> {
                                 width: 15,
                               )),
                     ),
+              const SizedBox(
+                height: 400,
+              )
             ],
           ),
         ),
-        const SizedBox(
-          height: 800,
-        )
       ],
     );
   }
@@ -466,8 +467,6 @@ class GlobalState extends ChangeNotifier {
 
   void toggleDarkMode() {
     isDarkMode = !isDarkMode;
-    //set theme mode value
-
     notifyListeners();
   }
 }

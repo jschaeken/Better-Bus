@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
 
 class StopDetailsPage extends StatefulWidget {
   const StopDetailsPage({Key? key, required this.stop}) : super(key: key);
@@ -28,6 +29,7 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    refreshBusTimes();
     if (widget.stop.notice != null) {
       noticeWidget = NoticeBox(
         widget.stop.notice!,
@@ -42,11 +44,27 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
     }
   }
 
+  void refreshBusTimes({bool isRefresh = false}) {
+    Provider.of<ApiInterface>(context, listen: false).getStopBusTimes(
+        widget.stop.stopId, (e) => log(e),
+        isRefresh: isRefresh);
+  }
+
   @override
   Widget build(BuildContext context) {
     DateTime updateTime = DateTime.now();
     return Scaffold(
       appBar: AppBar(
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        automaticallyImplyLeading: true,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+          ),
+        ),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             bottom: Radius.circular(15),
@@ -63,15 +81,13 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
               return IconButton(
                 onPressed: () {
                   isInitialLoad = false;
-                  setState(() {});
                   HapticFeedback.lightImpact();
                   if (value.containsKey(widget.stop.stopCode)) {
                     log('removing stop ${widget.stop.stopCode} from savedStops');
-                    Hive.box<Stop>('savedStops').delete(widget.stop.stopCode);
+                    value.delete(widget.stop.stopCode);
                   } else {
                     log('adding stop ${widget.stop.stopCode} to savedStops');
-                    Hive.box<Stop>('savedStops')
-                        .put(widget.stop.stopCode, widget.stop);
+                    value.put(widget.stop.stopCode, widget.stop);
                   }
                 },
                 icon: SizedBox(
@@ -101,228 +117,262 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(
-                height: 10,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(
+              height: 10,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BoldTileText(widget.stop.stopName),
+                    ],
+                  ),
+                ),
+                const SizedBox(
+                  width: 10,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => FullMapView(stop: widget.stop),
+                      ),
+                    );
+                  },
+                  child: Row(children: [
+                    Text(
+                      'Show on map',
+                      style: GoogleFonts.inter(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 5,
+                    ),
+                    Icon(
+                      CupertinoIcons.map_pin_ellipse,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ]),
+                ),
+              ],
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(100),
+                  child: Image.asset(
+                    'assets/images/dublinBusLogoSmall.png',
+                    filterQuality: FilterQuality.none,
+                    height: 50,
+                    width: 50,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            //notice
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: noticeWidget,
+              transitionBuilder: (child, animation) {
+                return SizeTransition(
+                  sizeFactor: animation,
+                  child: child,
+                );
+              },
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            //Times
+            Flexible(
+              flex: 7,
+              child: Consumer<ApiInterface>(builder: (context, value, child) {
+                if (!value.isLoadingInfo) {
+                  updateTime = DateTime.now();
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        BoldTileText(widget.stop.stopName),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const BoldTileText('Times'),
+                            StatefulBuilder(builder: (context, fresh) {
+                              //refresh every second
+                              Future.delayed(const Duration(seconds: 5), () {
+                                if (context.mounted) {
+                                  fresh(() {});
+                                }
+                              });
+                              return Text(
+                                  value.isLoadingInfo
+                                      ? ''
+                                      : 'Real Time Data Updated: ${DateTime.now().difference(updateTime).inMinutes < 1 ? 'Just now' : '${DateTime.now().difference(updateTime).inMinutes} minutes ago'}',
+                                  style: GoogleFonts.inter(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSecondary,
+                                    fontSize: Constants.bodyFontSize,
+                                  ));
+                            })
+                          ],
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            refreshBusTimes(isRefresh: true);
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.refresh_circled,
+                          ),
+                          iconSize: 35,
+                          color: Theme.of(context).colorScheme.tertiary,
+                        )
                       ],
                     ),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                          builder: (context) => FullMapView(stop: widget.stop),
+                    Flexible(
+                      flex: 5,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            border: Border.all(width: 1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(5),
+                            child: value.isLoadingInfo
+                                ? Center(
+                                    child: CircularProgressIndicator(
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                  ))
+                                : ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: value.busRtpiList.length,
+                                    // physics: const NeverScrollableScrollPhysics(),
+                                    itemBuilder: (context, index) {
+                                      return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 0,
+                                          ),
+                                          child: Card(
+                                            margin: const EdgeInsets.symmetric(
+                                                vertical: 5),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .secondary,
+                                            elevation: 0,
+                                            child: ListTile(
+                                              title: Row(
+                                                children: [
+                                                  ElevatedButton(
+                                                    onPressed: () {},
+                                                    child: Text(
+                                                      value
+                                                          .busRtpiList[index]
+                                                          .vehicleInfo
+                                                          .routeShortName,
+                                                      style: GoogleFonts.inter(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onPrimary,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: Constants
+                                                              .bodyFontSize),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(
+                                                    width: 10,
+                                                  ),
+                                                  Flexible(
+                                                    child: Text(
+                                                      value
+                                                          .busRtpiList[index]
+                                                          .vehicleInfo
+                                                          .tripHeadsign,
+                                                      style: GoogleFonts.inter(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onPrimary,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: Constants
+                                                              .bodyFontSize),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              trailing: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    '${value.busRtpiList[index].departureMins} ${value.busRtpiList[index].departureMins == 1 ? 'min' : 'mins'}',
+                                                    style: GoogleFonts.inter(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onPrimary,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: Constants
+                                                          .bodyFontSize,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ));
+                                    }),
+                          ),
                         ),
-                      );
-                    },
-                    child: Row(children: [
-                      Text(
-                        'Show on map',
-                        style: GoogleFonts.inter(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
                       ),
-                      const SizedBox(
-                        width: 5,
-                      ),
-                      Icon(
-                        CupertinoIcons.map_pin_ellipse,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ]),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(100),
-                    child: Image.asset(
-                      'assets/images/dublinBusLogoSmall.png',
-                      filterQuality: FilterQuality.none,
-                      height: 50,
-                      width: 50,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              //notice
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: noticeWidget,
-                transitionBuilder: (child, animation) {
-                  return SizeTransition(
-                    sizeFactor: animation,
-                    child: child,
-                  );
-                },
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              //Times
-
-              FutureBuilder(
-                  future: ApiInterface().getStopBusTimes(widget.stop.stopId,
-                      (e) => handleGetTripUpdateErrorCallback(e)),
-                  builder: (context, listBuses) {
-                    if (listBuses.data != null) {
-                      log('listBuses.data: ${listBuses.data}');
-                      updateTime = DateTime.now();
-                    }
-                    return !listBuses.hasData
-                        ? const CircularProgressIndicator()
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const BoldTileText('Times'),
-                                  StatefulBuilder(builder: (context, fresh) {
-                                    //refresh every second
-                                    Future.delayed(const Duration(seconds: 1),
-                                        () {
-                                      if (context.mounted) {
-                                        fresh(() {});
-                                      }
-                                    });
-                                    return Text(
-                                        'Real Time Data Updated: ${DateTime.now().difference(updateTime).inSeconds} seconds ago',
-                                        style: GoogleFonts.inter(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSecondary,
-                                          fontSize: Constants.bodyFontSize,
-                                        ));
-                                  })
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 10,
-                              ),
-                              ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: listBuses.data!.length,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemBuilder: (context, index) {
-                                    return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 0),
-                                        child: Card(
-                                          margin: const EdgeInsets.symmetric(
-                                              vertical: 5),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                          ),
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .secondary,
-                                          elevation: 0,
-                                          child: ListTile(
-                                            title: Row(
-                                              children: [
-                                                ElevatedButton(
-                                                  onPressed: () {},
-                                                  child: Text(
-                                                    listBuses
-                                                        .data![index]
-                                                        .vehicleInfo
-                                                        .routeShortName,
-                                                    style: GoogleFonts.inter(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onPrimary,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: Constants
-                                                            .bodyFontSize),
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                  width: 10,
-                                                ),
-                                                Flexible(
-                                                  child: Text(
-                                                    listBuses
-                                                        .data![index]
-                                                        .vehicleInfo
-                                                        .tripHeadsign,
-                                                    style: GoogleFonts.inter(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onPrimary,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: Constants
-                                                            .bodyFontSize),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            trailing: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text(
-                                                  '${listBuses.data![index].departureMins} ${listBuses.data![index].departureMins == 1 ? 'min' : 'mins'}',
-                                                  style: GoogleFonts.inter(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onPrimary,
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize:
-                                                        Constants.bodyFontSize,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ));
-                                  }),
-                            ],
-                          );
-                  }),
-            ],
-          ),
+                  ],
+                );
+              }),
+            ),
+          ],
         ),
       ),
     );
   }
 
   void handleGetTripUpdateErrorCallback(String error) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(error, style: GoogleFonts.inter()),
-      ));
-    }
+    // if (context.mounted) {
+    // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    // content: Text(error, style: GoogleFonts.inter()),
+    // ));
+    // }
   }
 
   int dateTimeToRelative(DateTime arrivalTime) {
