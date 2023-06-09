@@ -1,4 +1,6 @@
 //import http package
+// ignore_for_file: unused_import
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
@@ -18,6 +20,14 @@ class ApiInterface extends ChangeNotifier {
   String baseUrl = 'https://api.nationaltransport.ie/gtfsr/v2/';
 
   List<VehicleInfo> _listActiveVehicleInfo = [];
+
+  List<Agency> _servingAgencies = [];
+  List<Agency> get servingAgencies => _servingAgencies;
+  set servingAgencies(List<Agency> value) {
+    _servingAgencies = value;
+    notifyListeners();
+  }
+
   List<VehicleInfo> get listActiveVehicleInfo => _listActiveVehicleInfo;
 
   bool _isTripUpdatesLoading = false;
@@ -166,61 +176,14 @@ class ApiInterface extends ChangeNotifier {
     } else {
       _isLoadingInfo = true;
     }
-    //start a timeout timer
-    final timer = Timer(const Duration(seconds: 10), () {
-      //if the timer is not cancelled, then the request has timed out
-      if (isLoadingInfo) {
-        errorCallback('Request timed out');
-        isLoadingInfo = false;
-        notifyListeners();
-      }
-    });
-    try {
-      final response = await http.get(
-        Uri.parse(
-          '${Constants.baseUrl}getStopTimes?route=$route&stop_id=$stopId',
-        ),
-      );
-      if (response.statusCode != 200) {
-        timer.cancel();
-        errorCallback(jsonDecode(response.body)['error']);
-        isLoadingInfo = false;
-        notifyListeners();
-        busRtpiList = [
-          BusRtpi(
-            departureMins: 5,
-            scheduleType: ScheduleType.scheduled,
-            vehicleInfo: VehicleInfo(
-              routeShortName: route,
-              tripHeadsign: 'Dummy Response',
-              tripId: 'trip_id',
-            ),
-          ),
-        ];
-      } else if (response.statusCode == 200) {
-        timer.cancel();
-        isLoadingInfo = false;
-        notifyListeners();
-        final json = jsonDecode(response.body)['times'];
-        busRtpiList = json
-            .map<BusRtpi>((busRtpi) => BusRtpi(
-                departureMins: busRtpi['departure_mins'],
-                scheduleType: ScheduleType.scheduled,
-                vehicleInfo: VehicleInfo(
-                  routeShortName: route,
-                  tripHeadsign: busRtpi['destination'],
-                  tripId: busRtpi['trip_id'],
-                )))
-            .toList();
-        log('data updated successfully');
-      }
-    } catch (e) {
-      timer.cancel();
-      errorCallback(e.toString());
-    }
-    await Future.delayed(1000.ms);
+    await Future.delayed(const Duration(seconds: 1));
+    servingAgencies = [
+      Agency.dublinBus,
+      Agency.goAhead,
+      Agency.busEireann,
+    ];
     isLoadingInfo = false;
-    timer.cancel();
+    // timer.cancel();
     busRtpiList = [
       for (int i = 0; i < 20; i++)
         BusRtpi(
@@ -233,6 +196,58 @@ class ApiInterface extends ChangeNotifier {
           ),
         ),
     ];
+    //start a timeout timer
+    // final timer = Timer(const Duration(seconds: 10), () {
+    //   //if the timer is not cancelled, then the request has timed out
+    //   if (isLoadingInfo) {
+    //     errorCallback('Request timed out');
+    //     isLoadingInfo = false;
+    //     notifyListeners();
+    //   }
+    // });
+    // try {
+    //   final response = await http.get(
+    //     Uri.parse(
+    //       '${Constants.baseUrl}getStopTimes?route=$route&stop_id=$stopId',
+    //     ),
+    //   );
+    //   if (response.statusCode != 200) {
+    //     timer.cancel();
+    //     errorCallback(jsonDecode(response.body)['error']);
+    //     isLoadingInfo = false;
+    //     notifyListeners();
+    //     busRtpiList = [
+    //       BusRtpi(
+    //         departureMins: 5,
+    //         scheduleType: ScheduleType.scheduled,
+    //         vehicleInfo: VehicleInfo(
+    //           routeShortName: route,
+    //           tripHeadsign: 'Dummy Response',
+    //           tripId: 'trip_id',
+    //         ),
+    //       ),
+    //     ];
+    //   } else if (response.statusCode == 200) {
+    //     timer.cancel();
+    //     isLoadingInfo = false;
+    //     notifyListeners();
+    //     final json = jsonDecode(response.body)['times'];
+    //     busRtpiList = json
+    //         .map<BusRtpi>((busRtpi) => BusRtpi(
+    //             departureMins: busRtpi['departure_mins'],
+    //             scheduleType: ScheduleType.scheduled,
+    //             vehicleInfo: VehicleInfo(
+    //               routeShortName: route,
+    //               tripHeadsign: busRtpi['destination'],
+    //               tripId: busRtpi['trip_id'],
+    //             )))
+    //         .toList();
+    //     log('data updated successfully');
+    //   }
+    // } catch (e) {
+    //   timer.cancel();
+    //   errorCallback(e.toString());
+    // }
   }
 
   Future<int> getTripUpdates(

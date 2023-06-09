@@ -8,6 +8,9 @@ class Constants {
   static const double headerSpacing = 10.0;
   static const double subHeaderSpacing = 8.0;
 
+  //padding
+  static const double padding = 14.0;
+
   //api
   static const String baseUrl = 'https://example.com/';
 }

@@ -151,4 +151,5 @@ enum ScheduleType {
 enum Agency {
   dublinBus,
   goAhead,
+  busEireann,
 }

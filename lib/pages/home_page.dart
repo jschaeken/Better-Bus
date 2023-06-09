@@ -60,85 +60,89 @@ class HomePageState extends State<HomePage> {
       resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).colorScheme.primary,
       drawer: const HomePageDrawer(),
-      body: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          Stack(
-            children: [
-              isMobile
-                  ? const MapView()
-                  : Image.asset(
-                      'assets/images/appleMap.jpg',
-                    ),
-              SafeArea(
-                child: Column(
-                  children: [
-                    Align(
-                        alignment: Alignment.topLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              PressableIcon(
-                                icon: CupertinoIcons.line_horizontal_3,
-                                onPressed: () {
-                                  handleOpenDrawer(context, scaffoldKey);
-                                },
-                              )
-                            ],
-                          ),
-                        )),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          DraggableScrollableSheet(
-            snap: true,
-            expand: false,
-            snapAnimationDuration: animationDuration,
-            controller: draggableScrollController,
-            snapSizes: snapSizes,
-            initialChildSize: initialChildSize,
-            minChildSize: minChildSize,
-            maxChildSize: maxChildSize,
-            builder: (BuildContext context, ScrollController scrollController) {
-              return Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 20,
-                      offset: const Offset(0, 5), // changes position of shadow
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40),
+      body: LayoutBuilder(
+        builder: (context, constraints) => Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Stack(
+              children: [
+                isMobile
+                    ? const MapView()
+                    : Image.asset(
+                        'assets/images/appleMap.jpg',
+                      ),
+                SafeArea(
+                  child: Column(
+                    children: [
+                      Align(
+                          alignment: Alignment.topLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                PressableIcon(
+                                  icon: CupertinoIcons.line_horizontal_3,
+                                  onPressed: () {
+                                    handleOpenDrawer(context, scaffoldKey);
+                                  },
+                                )
+                              ],
+                            ),
+                          )),
+                    ],
                   ),
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    child: Container(
-                      color: Theme.of(context).colorScheme.background,
-                      child: MainModalSheet(
-                        searchTapped: () {
-                          if (draggableScrollController.size <
-                              modalSearchHeight) {
-                            showFullModal();
-                          }
-                        },
+                ),
+              ],
+            ),
+            DraggableScrollableSheet(
+              snap: true,
+              expand: false,
+              snapAnimationDuration: animationDuration,
+              controller: draggableScrollController,
+              snapSizes: snapSizes,
+              initialChildSize: initialChildSize,
+              minChildSize: minChildSize,
+              maxChildSize: maxChildSize,
+              builder:
+                  (BuildContext context, ScrollController scrollController) {
+                return Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.25),
+                        blurRadius: 20,
+                        offset:
+                            const Offset(0, 5), // changes position of shadow
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40),
+                    ),
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: Container(
+                        color: Theme.of(context).colorScheme.background,
+                        child: MainModalSheet(
+                          searchTapped: () {
+                            if (draggableScrollController.size <
+                                modalSearchHeight) {
+                              showFullModal();
+                            }
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

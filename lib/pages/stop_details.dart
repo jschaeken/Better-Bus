@@ -21,15 +21,23 @@ class StopDetailsPage extends StatefulWidget {
   _StopDetailsPageState createState() => _StopDetailsPageState();
 }
 
-class _StopDetailsPageState extends State<StopDetailsPage> {
+class _StopDetailsPageState extends State<StopDetailsPage>
+    with SingleTickerProviderStateMixin {
   bool isInitialLoad = true;
   Widget noticeWidget = const SizedBox();
+
+  //Refresh animation controller
+  late AnimationController animController;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     refreshBusTimes();
+    animController = AnimationController(
+      vsync: this,
+      duration: 300.ms,
+    );
     if (widget.stop.notice != null) {
       noticeWidget = NoticeBox(
         widget.stop.notice!,
@@ -46,8 +54,10 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
 
   void refreshBusTimes({bool isRefresh = false}) {
     Provider.of<ApiInterface>(context, listen: false).getStopBusTimes(
-        widget.stop.stopId, (e) => log(e),
-        isRefresh: isRefresh);
+      widget.stop.stopId,
+      (e) => log(e),
+      isRefresh: isRefresh,
+    );
   }
 
   @override
@@ -115,253 +125,310 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(
-              height: 10,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      BoldTileText(widget.stop.stopName),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => FullMapView(stop: widget.stop),
-                      ),
-                    );
-                  },
-                  child: Row(children: [
-                    Text(
-                      'Show on map',
-                      style: GoogleFonts.inter(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
+      body: SafeArea(
+        bottom: true,
+        top: false,
+        left: false,
+        right: false,
+        child: Padding(
+          // padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.all(0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(
+                height: 10,
+              ),
+              HorizPaddingConstant(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          BoldTileText(widget.stop.stopName),
+                        ],
                       ),
                     ),
                     const SizedBox(
-                      width: 5,
+                      width: 10,
                     ),
-                    Icon(
-                      CupertinoIcons.map_pin_ellipse,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ]),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(100),
-                  child: Image.asset(
-                    'assets/images/dublinBusLogoSmall.png',
-                    filterQuality: FilterQuality.none,
-                    height: 50,
-                    width: 50,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            //notice
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: noticeWidget,
-              transitionBuilder: (child, animation) {
-                return SizeTransition(
-                  sizeFactor: animation,
-                  child: child,
-                );
-              },
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            //Times
-            Flexible(
-              flex: 7,
-              child: Consumer<ApiInterface>(builder: (context, value, child) {
-                if (!value.isLoadingInfo) {
-                  updateTime = DateTime.now();
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const BoldTileText('Times'),
-                            StatefulBuilder(builder: (context, fresh) {
-                              //refresh every second
-                              Future.delayed(const Duration(seconds: 5), () {
-                                if (context.mounted) {
-                                  fresh(() {});
-                                }
-                              });
-                              return Text(
-                                  value.isLoadingInfo
-                                      ? ''
-                                      : 'Real Time Data Updated: ${DateTime.now().difference(updateTime).inMinutes < 1 ? 'Just now' : '${DateTime.now().difference(updateTime).inMinutes} minutes ago'}',
-                                  style: GoogleFonts.inter(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSecondary,
-                                    fontSize: Constants.bodyFontSize,
-                                  ));
-                            })
-                          ],
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            refreshBusTimes(isRefresh: true);
-                          },
-                          icon: const Icon(
-                            CupertinoIcons.refresh_circled,
+                    ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                            builder: (context) =>
+                                FullMapView(stop: widget.stop),
                           ),
-                          iconSize: 35,
-                          color: Theme.of(context).colorScheme.tertiary,
-                        )
-                      ],
-                    ),
-                    Flexible(
-                      flex: 5,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            border: Border.all(width: 1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(5),
-                            child: value.isLoadingInfo
-                                ? Center(
-                                    child: CircularProgressIndicator(
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
-                                  ))
-                                : ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: value.busRtpiList.length,
-                                    // physics: const NeverScrollableScrollPhysics(),
-                                    itemBuilder: (context, index) {
-                                      return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 0,
-                                          ),
-                                          child: Card(
-                                            margin: const EdgeInsets.symmetric(
-                                                vertical: 5),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                            ),
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .secondary,
-                                            elevation: 0,
-                                            child: ListTile(
-                                              title: Row(
-                                                children: [
-                                                  ElevatedButton(
-                                                    onPressed: () {},
-                                                    child: Text(
-                                                      value
-                                                          .busRtpiList[index]
-                                                          .vehicleInfo
-                                                          .routeShortName,
-                                                      style: GoogleFonts.inter(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .colorScheme
-                                                                  .onPrimary,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: Constants
-                                                              .bodyFontSize),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(
-                                                    width: 10,
-                                                  ),
-                                                  Flexible(
-                                                    child: Text(
-                                                      value
-                                                          .busRtpiList[index]
-                                                          .vehicleInfo
-                                                          .tripHeadsign,
-                                                      style: GoogleFonts.inter(
-                                                          color:
-                                                              Theme.of(context)
-                                                                  .colorScheme
-                                                                  .onPrimary,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: Constants
-                                                              .bodyFontSize),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              trailing: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    '${value.busRtpiList[index].departureMins} ${value.busRtpiList[index].departureMins == 1 ? 'min' : 'mins'}',
-                                                    style: GoogleFonts.inter(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .onPrimary,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: Constants
-                                                          .bodyFontSize,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ));
-                                    }),
+                        );
+                      },
+                      child: Row(children: [
+                        Text(
+                          'Show on map',
+                          style: GoogleFonts.inter(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        Icon(
+                          CupertinoIcons.map_pin_ellipse,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ]),
                     ),
                   ],
-                );
-              }),
-            ),
-          ],
+                ),
+              ),
+              const HorizPaddingConstant(
+                child: SizedBox(
+                  height: 20,
+                ),
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Consumer<ApiInterface>(
+                    builder: (context, value, child) => (Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            for (var i = 0;
+                                i < value.servingAgencies.length;
+                                i++)
+                              Padding(
+                                padding: EdgeInsets.only(
+                                    left: 14,
+                                    right: i == value.servingAgencies.length
+                                        ? 14
+                                        : 0),
+                                child: getLogoPathForAgency(
+                                            value.servingAgencies[i]) ==
+                                        null
+                                    ? const SizedBox()
+                                    : Container(
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                          borderRadius:
+                                              BorderRadius.circular(100),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(100),
+                                            child: Image.asset(
+                                              getLogoPathForAgency(
+                                                  value.servingAgencies[i])!,
+                                              fit: BoxFit.cover,
+                                              filterQuality: FilterQuality.none,
+                                              height: 60,
+                                              width: 60,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                          ],
+                        ))),
+              ),
+              const HorizPaddingConstant(
+                child: SizedBox(
+                  height: 20,
+                ),
+              ),
+              //notice
+              HorizPaddingConstant(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: noticeWidget,
+                  transitionBuilder: (child, animation) {
+                    return SizeTransition(
+                      sizeFactor: animation,
+                      child: child,
+                    );
+                  },
+                ),
+              ),
+              //Times
+              Flexible(
+                flex: 7,
+                child: HorizPaddingConstant(
+                  child:
+                      Consumer<ApiInterface>(builder: (context, value, child) {
+                    if (!value.isLoadingInfo) {
+                      updateTime = DateTime.now();
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const BoldTileText('Times'),
+                                StatefulBuilder(builder: (context, fresh) {
+                                  //refresh every second
+                                  Future.delayed(const Duration(seconds: 5),
+                                      () {
+                                    if (context.mounted) {
+                                      fresh(() {});
+                                    }
+                                  });
+                                  return Text(
+                                      value.isLoadingInfo
+                                          ? ''
+                                          : 'Real Time Data Updated: ${DateTime.now().difference(updateTime).inMinutes < 1 ? 'Just now' : '${DateTime.now().difference(updateTime).inMinutes} minutes ago'}',
+                                      style: GoogleFonts.inter(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSecondary,
+                                        fontSize: Constants.bodyFontSize,
+                                      ));
+                                })
+                              ],
+                            ),
+                            Animate(
+                              controller: animController,
+                              effects: const [RotateEffect()],
+                              child: IconButton(
+                                onPressed: () async {
+                                  refreshBusTimes(isRefresh: true);
+                                  await animController.animateTo(1);
+                                  animController.value = 0;
+                                },
+                                icon: const Icon(
+                                  CupertinoIcons.refresh_circled,
+                                ),
+                                iconSize: 35,
+                                color: Theme.of(context).colorScheme.tertiary,
+                              ),
+                            )
+                          ],
+                        ),
+                        Flexible(
+                          flex: 5,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              border: Border.all(width: 1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(5),
+                              child: value.isLoadingInfo
+                                  ? Center(
+                                      child: CircularProgressIndicator(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                    ))
+                                  : ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: value.busRtpiList.length,
+                                      // physics: const NeverScrollableScrollPhysics(),
+                                      itemBuilder: (context, index) {
+                                        return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 0,
+                                            ),
+                                            child: Card(
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 5),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                              ),
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .secondary,
+                                              elevation: 0,
+                                              child: ListTile(
+                                                title: Row(
+                                                  children: [
+                                                    ElevatedButton(
+                                                      onPressed: () {},
+                                                      child: Text(
+                                                        value
+                                                            .busRtpiList[index]
+                                                            .vehicleInfo
+                                                            .routeShortName,
+                                                        style: GoogleFonts.inter(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onPrimary,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: Constants
+                                                                .bodyFontSize),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(
+                                                      width: 10,
+                                                    ),
+                                                    Flexible(
+                                                      child: Text(
+                                                        value
+                                                            .busRtpiList[index]
+                                                            .vehicleInfo
+                                                            .tripHeadsign,
+                                                        style: GoogleFonts.inter(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onPrimary,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: Constants
+                                                                .bodyFontSize),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                trailing: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      '${value.busRtpiList[index].departureMins} ${value.busRtpiList[index].departureMins == 1 ? 'min' : 'mins'}',
+                                                      style: GoogleFonts.inter(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onPrimary,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontSize: Constants
+                                                            .bodyFontSize,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ));
+                                      }),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -378,6 +445,17 @@ class _StopDetailsPageState extends State<StopDetailsPage> {
   int dateTimeToRelative(DateTime arrivalTime) {
     log('arrival time: $arrivalTime');
     return (arrivalTime.difference(DateTime.now())).inMinutes;
+  }
+
+  String? getLogoPathForAgency(Agency servingAgenci) {
+    switch (servingAgenci) {
+      case Agency.dublinBus:
+        return 'assets/images/dublinBusLogo.jpg';
+      case Agency.goAhead:
+        return 'assets/images/goAheadLogo.png';
+      case Agency.busEireann:
+        return 'assets/images/busEireannLogo.jpg';
+    }
   }
 }
 
@@ -437,6 +515,20 @@ class NoticeBox extends StatelessWidget {
           )
         ],
       ),
+    );
+  }
+}
+
+class HorizPaddingConstant extends StatelessWidget {
+  const HorizPaddingConstant({Key? key, required this.child}) : super(key: key);
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Constants.padding),
+      child: child,
     );
   }
 }
