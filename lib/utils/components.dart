@@ -5,8 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'models.dart';
-
 enum BusCompany {
   dublinBus,
   goAhead,
@@ -151,6 +149,7 @@ class DraggableIndicatorBar extends StatelessWidget {
 class ModalSearchBar extends StatelessWidget {
   const ModalSearchBar({
     super.key,
+    required this.isRouteSearch,
     required this.onSearchTap,
     required this.controller,
     required this.onSearchChanged,
@@ -158,15 +157,18 @@ class ModalSearchBar extends StatelessWidget {
     this.isSearchLoading = false,
     required this.focusNode,
     this.searchResults = const [],
+    required this.isLoadingRoute,
   });
 
+  final bool isRouteSearch;
   final VoidCallback onSearchTap;
   final TextEditingController controller;
   final ValueChanged<String> onSearchChanged;
-  final List<Stop> searchResults;
-  final ValueChanged<Stop> onTileTap;
+  final List<dynamic> searchResults;
+  final ValueChanged<dynamic> onTileTap;
   final bool isSearchLoading;
   final FocusNode focusNode;
+  final bool isLoadingRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +187,9 @@ class ModalSearchBar extends StatelessWidget {
           onChanged: (s) => onSearchChanged(s),
           controller: controller,
           inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
+            if (isRouteSearch)
+              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+            if (!isRouteSearch) FilteringTextInputFormatter.digitsOnly,
           ],
           onTapOutside: (event) {
             final FocusScopeNode currentScope = FocusScope.of(context);
@@ -194,7 +198,8 @@ class ModalSearchBar extends StatelessWidget {
             }
           },
           focusNode: focusNode,
-          keyboardType: TextInputType.number,
+          keyboardType:
+              isRouteSearch ? TextInputType.text : TextInputType.number,
           style: GoogleFonts.inter(
             color: Theme.of(context).colorScheme.onPrimary,
             fontSize: Constants.headerFontSize,
@@ -218,12 +223,11 @@ class ModalSearchBar extends StatelessWidget {
                     onPressed: () {
                       controller.clear();
                       onSearchChanged('');
-                      //requestFocus();
                       FocusScope.of(context).requestFocus(focusNode);
                     },
                   )
                 : const SizedBox(),
-            hintText: '7415',
+            hintText: isRouteSearch ? 'Search Routes' : 'Search Stops',
             hintStyle: GoogleFonts.inter(
               color: Theme.of(context).colorScheme.onPrimary.withOpacity(.5),
               fontSize: Constants.headerFontSize,
@@ -247,7 +251,7 @@ class ModalSearchBar extends StatelessWidget {
                     height: 90,
                     child: Center(
                       child: Text(
-                        'No Stops Found',
+                        'No ${isRouteSearch ? 'routes' : 'stops'} found',
                         style: GoogleFonts.inter(
                           color: Theme.of(context).colorScheme.onSecondary,
                           fontSize: Constants.bodyFontSize,
@@ -268,44 +272,16 @@ class ModalSearchBar extends StatelessWidget {
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   itemCount: searchResults.length,
                   itemBuilder: (context, index) {
-                    return Padding(
-                      padding: index == 0
-                          ? const EdgeInsets.only(top: 12, bottom: 3)
-                          : const EdgeInsets.symmetric(vertical: 3),
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 6,
-                        child: ListTile(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            tileColor: Theme.of(context).colorScheme.secondary,
-                            onTap: () {
-                              onTileTap(searchResults[index]);
-                            },
-                            title: Text(
-                              searchResults[index].stopCode,
-                              style: GoogleFonts.inter(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: Constants.headerFontSize,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              searchResults[index].stopName,
-                              style: GoogleFonts.inter(
-                                color:
-                                    Theme.of(context).colorScheme.onSecondary,
-                                fontSize: Constants.bodyFontSize,
-                              ),
-                            ),
-                            trailing: const CircleAvatar(
-                                foregroundImage: AssetImage(
-                              'assets/images/dublinBusLogo.jpg',
-                            ))),
-                      ),
+                    return InformationTile(
+                      onTileTap: () => onTileTap(searchResults[index]),
+                      titleText: isRouteSearch
+                          ? searchResults[index].routeShortName
+                          : searchResults[index].stopCode,
+                      subtitleText: isRouteSearch
+                          ? '${searchResults[index].routeLongName}'
+                          : searchResults[index].stopName,
+                      isLoadingRoute: isLoadingRoute,
+                      index: index,
                     );
                   },
                 ),
@@ -315,20 +291,89 @@ class ModalSearchBar extends StatelessWidget {
   }
 }
 
+class InformationTile extends StatelessWidget {
+  const InformationTile({
+    super.key,
+    required this.onTileTap,
+    required this.titleText,
+    required this.subtitleText,
+    required this.isLoadingRoute,
+    required this.index,
+  });
+
+  final VoidCallback onTileTap;
+  final String titleText;
+  final String subtitleText;
+  final bool isLoadingRoute;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: index == 0
+          ? const EdgeInsets.only(top: 12, bottom: 3)
+          : const EdgeInsets.symmetric(vertical: 3),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 6,
+        child: ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          tileColor: Theme.of(context).colorScheme.secondary,
+          onTap: () {
+            onTileTap();
+          },
+          title: Text(
+            titleText,
+            style: GoogleFonts.inter(
+              color: Theme.of(context).colorScheme.onPrimary,
+              fontSize: Constants.headerFontSize,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          subtitle: Text(
+            subtitleText,
+            style: GoogleFonts.inter(
+              color: Theme.of(context).colorScheme.onSecondary,
+              fontSize: Constants.bodyFontSize,
+            ),
+          ),
+          trailing: PressableIcon(
+            backgroundColor:
+                Theme.of(context).colorScheme.tertiary.withOpacity(.4),
+            isLoading: isLoadingRoute,
+            onPressed: () {
+              onTileTap();
+            },
+            child: const Icon(CupertinoIcons.chevron_right),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class PressableIcon extends StatelessWidget {
   const PressableIcon({
     super.key,
-    required this.icon,
+    required this.child,
     required this.onPressed,
+    this.backgroundColor,
+    this.isLoading = false,
   });
 
-  final IconData icon;
+  final Widget child;
   final VoidCallback onPressed;
+  final Color? backgroundColor;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Theme.of(context).colorScheme.primary,
+      color: backgroundColor ?? Theme.of(context).colorScheme.primary,
       borderRadius: BorderRadius.circular(100),
       child: InkWell(
         borderRadius: BorderRadius.circular(100),
@@ -338,11 +383,11 @@ class PressableIcon extends StatelessWidget {
         child: CircleAvatar(
           radius: 25,
           backgroundColor: Colors.transparent,
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.onSecondary,
-            size: 25,
-          ),
+          child: isLoading
+              ? CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                )
+              : child,
         ),
       ),
     );

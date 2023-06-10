@@ -64,7 +64,8 @@ class MyApp extends StatelessWidget {
             primaryColor: Colors.white,
             useMaterial3: true,
           ),
-          themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          // themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: ThemeMode.system,
           darkTheme: ThemeData(
             colorScheme: const ColorScheme(
               brightness: Brightness.dark,

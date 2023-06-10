@@ -1,10 +1,17 @@
-import 'package:better_bus_dublin/utils/models.dart';
 import 'package:flutter/cupertino.dart';
 
 class SearchProvider extends ChangeNotifier {
-  List<Stop> _searchResults = [];
-  List<Stop> get searchResults => _searchResults;
-  set searchResults(List<Stop> value) {
+  List<dynamic> _searchResults = [];
+
+  bool _isLoadingRoute = false;
+  bool get isLoadingRoute => _isLoadingRoute;
+  set isLoadingRoute(bool value) {
+    _isLoadingRoute = value;
+    notifyListeners();
+  }
+
+  List<dynamic> get searchResults => _searchResults;
+  set searchResults(List<dynamic> value) {
     _searchResults = value;
     notifyListeners();
   }
@@ -20,7 +27,7 @@ class SearchProvider extends ChangeNotifier {
     isSearching = true;
   }
 
-  void stopSeatchLoading() {
+  void stopSearchLoading() {
     isSearching = false;
   }
 }

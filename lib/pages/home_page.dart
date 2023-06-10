@@ -1,6 +1,8 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:better_bus_dublin/components/map_view.dart';
+import 'package:better_bus_dublin/pages/route_detail_page.dart';
 import 'package:better_bus_dublin/pages/saved_page.dart';
 import 'package:better_bus_dublin/pages/stop_details.dart';
 import 'package:better_bus_dublin/utils/api_interface.dart';
@@ -53,6 +55,19 @@ class HomePageState extends State<HomePage> {
     });
   }
 
+  initialRoutesLoad() async {
+    await Provider.of<ApiInterface>(context, listen: false).loadRoutes(
+        callback: (errorString) {
+      if (errorString.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorString),
+          ),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,7 +97,8 @@ class HomePageState extends State<HomePage> {
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 PressableIcon(
-                                  icon: CupertinoIcons.line_horizontal_3,
+                                  child: const Icon(
+                                      CupertinoIcons.line_horizontal_3),
                                   onPressed: () {
                                     handleOpenDrawer(context, scaffoldKey);
                                   },
@@ -124,7 +140,7 @@ class HomePageState extends State<HomePage> {
                     ),
                     child: SingleChildScrollView(
                       controller: scrollController,
-                      physics: const NeverScrollableScrollPhysics(),
+                      physics: const ClampingScrollPhysics(),
                       child: Container(
                         color: Theme.of(context).colorScheme.background,
                         child: MainModalSheet(
@@ -176,15 +192,16 @@ class MainModalSheet extends StatefulWidget {
 }
 
 class _MainModalSheetState extends State<MainModalSheet> {
-  final TextEditingController busStopSearchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
   final FocusNode focusNode = FocusNode();
+  int selectedSearchIndex = 0;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    busStopSearchController.addListener(() {
-      if (busStopSearchController.text.isNotEmpty) {
+    searchController.addListener(() {
+      if (searchController.text.isNotEmpty) {
         widget.searchTapped();
       }
     });
@@ -211,26 +228,110 @@ class _MainModalSheetState extends State<MainModalSheet> {
                 height: 20,
               ),
               const BoldTileText(
-                'Search Stop Number',
+                'Search',
               ),
               const SizedBox(
                 height: 10,
               ),
+              //Stop or Route selection
               Consumer<SearchProvider>(
-                builder: (context, searchProvider, child) => ModalSearchBar(
-                  onSearchTap: widget.searchTapped,
-                  controller: busStopSearchController,
-                  searchResults: searchProvider.searchResults,
-                  isSearchLoading: searchProvider.isSearching,
-                  onSearchChanged: (String value) {
-                    searchProvider.startSearchLoading();
-                    searchBusStopsByStopNumber(value.trim());
-                    searchProvider.stopSeatchLoading();
-                  },
-                  focusNode: focusNode,
-                  onTileTap: (stop) {
-                    handleStopTileTap(stop);
-                  },
+                builder: (context, searchProvider, child) => Column(
+                  children: [
+                    Container(
+                      height: 50,
+                      margin: const EdgeInsets.only(
+                        bottom: 10,
+                        top: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondary,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Stack(
+                            children: [
+                              AnimatedAlign(
+                                duration: const Duration(milliseconds: 120),
+                                alignment: selectedSearchIndex == 0
+                                    ? Alignment.centerLeft
+                                    : Alignment.centerRight,
+                                curve: Curves.easeIn,
+                                child: FractionallySizedBox(
+                                  widthFactor: .5,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .tertiary,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    height: 50,
+                                  ),
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  SearchToggleSwitch(
+                                    isSelected: selectedSearchIndex == 0,
+                                    onTapped: () => setState(() {
+                                      selectedSearchIndex = 0;
+                                      searchBusStopsByStopNumber(
+                                          searchController.text.trim());
+                                    }),
+                                    text: 'By Stop Number',
+                                  ),
+                                  const SizedBox(
+                                    width: 4,
+                                  ),
+                                  SearchToggleSwitch(
+                                    isSelected: selectedSearchIndex == 1,
+                                    onTapped: () => setState(() {
+                                      selectedSearchIndex = 1;
+                                      searchBusStopsByRoute(
+                                          searchController.text.trim());
+                                    }),
+                                    text: 'By Route',
+                                  )
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    ModalSearchBar(
+                      isRouteSearch: selectedSearchIndex == 1,
+                      onSearchTap: widget.searchTapped,
+                      controller: searchController,
+                      searchResults: searchProvider.searchResults,
+                      isSearchLoading: searchProvider.isSearching,
+                      isLoadingRoute: searchProvider.isLoadingRoute,
+                      onSearchChanged: (String value) async {
+                        if (selectedSearchIndex == 0) {
+                          searchBusStopsByStopNumber(value.trim());
+                        } else {
+                          searchBusStopsByRoute(value.trim());
+                        }
+                      },
+                      focusNode: focusNode,
+                      onTileTap: (tile) async {
+                        if (selectedSearchIndex == 0) {
+                          handleStopTileTap(tile);
+                        } else {
+                          searchProvider.isLoadingRoute = true;
+                          final busRoute = await handleRouteTileTap(
+                              tile, (e) => handleErrorOnTap(e));
+                          searchProvider.isLoadingRoute = false;
+                          pushRoutePage(busRoute);
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
               //Saved Stops Text and Button Row
@@ -303,6 +404,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                   ],
                 ),
               ),
+              //Saved Stops
               box.isEmpty
                   ? Container(
                       alignment: Alignment.center,
@@ -394,9 +496,79 @@ class _MainModalSheetState extends State<MainModalSheet> {
     );
   }
 
-  void handleStopTileTap(Stop stop) {
+  void handleStopTileTap(Stop stop, {Function(String e)? errorCallback}) {
     Navigator.push(context,
         CupertinoPageRoute(builder: (context) => StopDetailsPage(stop: stop)));
+  }
+
+  Future<BusRoute> handleRouteTileTap(
+      BusRoute route, Function(String e) errorCallback) async {
+    BusRoute returnedRoute =
+        await Provider.of<ApiInterface>(context, listen: false)
+            .getRouteDetail(route, errorCallback);
+    log(returnedRoute.routeStops.length.toString());
+    return returnedRoute;
+  }
+
+  void pushRoutePage(BusRoute route) {
+    Navigator.push(context,
+        CupertinoPageRoute(builder: (context) => RouteDetail(route: route)));
+  }
+
+  void searchBusStopsByRoute(String trim) {
+    Provider.of<SearchProvider>(context, listen: false).searchResults =
+        Provider.of<ApiInterface>(context, listen: false)
+            .searchByRouteName(trim, (errorString) {
+      if (errorString.isNotEmpty) {
+        //cancel all snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(errorString)));
+      }
+    });
+  }
+
+  handleErrorOnTap(String error) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+  }
+}
+
+class SearchToggleSwitch extends StatelessWidget {
+  const SearchToggleSwitch({
+    super.key,
+    required this.isSelected,
+    required this.onTapped,
+    required this.text,
+  });
+
+  final bool isSelected;
+  final Function() onTapped;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () {
+            onTapped();
+          },
+          child: Center(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSecondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -435,27 +607,6 @@ class _HomePageDrawerState extends State<HomePageDrawer> {
                       color: Theme.of(context).colorScheme.tertiary,
                     ),
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const BoldTileText(
-                        'Dark Mode',
-                      ),
-                      Consumer<GlobalState>(
-                        builder: (context, value, child) => Switch(
-                          activeTrackColor:
-                              Theme.of(context).colorScheme.tertiary,
-                          value: value.isDarkMode,
-                          onChanged: (_) {
-                            value.toggleDarkMode();
-                          },
-                        ),
-                      ),
-                    ],
-                  )
                 ],
               ),
             ),

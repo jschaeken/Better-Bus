@@ -11,6 +11,7 @@ class BusRoute {
   String? routeUrl;
   String? routeColor;
   String? routeTextColor;
+  List<Stop> routeStops;
 
   BusRoute({
     required this.routeId,
@@ -22,6 +23,7 @@ class BusRoute {
     this.routeUrl,
     this.routeColor,
     this.routeTextColor,
+    this.routeStops = const [],
   });
 }
 

@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-
 import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:csv/csv.dart';
@@ -15,10 +14,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:gtfs_realtime_bindings/gtfs_realtime_bindings.dart' as gtfs;
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 
 class ApiInterface extends ChangeNotifier {
-  String baseUrl = 'https://api.nationaltransport.ie/gtfsr/v2/';
-
   List<VehicleInfo> _listActiveVehicleInfo = [];
 
   List<Agency> _servingAgencies = [];
@@ -45,6 +43,13 @@ class ApiInterface extends ChangeNotifier {
 
   set listActiveVehicleInfo(List<VehicleInfo> value) {
     _listActiveVehicleInfo = value;
+    notifyListeners();
+  }
+
+  List<BusRoute> _listRoutes = [];
+  List<BusRoute> get listRoutes => _listRoutes;
+  set listRoutes(List<BusRoute> value) {
+    _listRoutes = value;
     notifyListeners();
   }
 
@@ -78,15 +83,16 @@ class ApiInterface extends ChangeNotifier {
 
   List<BusRtpi> busRtpiList = [];
 
-  Future<List<BusRoute>> loadRoutes() async {
+  Future<void> loadRoutes({Function(String e)? callback}) async {
     final longString =
         await rootBundle.loadString('assets/gtfs_data/routes.txt');
-    return const CsvToListConverter()
+    _listRoutes = const CsvToListConverter()
         .convert(longString)
         .map((row) => BusRoute(
               routeId: row[0].toString(),
               agencyId: row[1].toString(),
               routeShortName: row[2].toString(),
+              routeLongName: row[3].toString(),
             ))
         .toList();
   }
@@ -169,6 +175,31 @@ class ApiInterface extends ChangeNotifier {
     notifyListeners();
   }
 
+  Stop? searchByStopId(String stopId, Function(String e) errorCallback) {
+    try {
+      if (listStops.isEmpty) {
+        loadStops(
+          callback: (e) {
+            errorCallback(e);
+          },
+        );
+      }
+      if (stopId.isEmpty) {
+        return null;
+      }
+      final matchingStops = listStops.where((stop) {
+        return stop.stopId == stopId;
+      }).toList();
+      if (matchingStops.isNotEmpty) {
+        return matchingStops.first;
+      }
+    } catch (e) {
+      errorCallback(e.toString());
+      return null;
+    }
+    return null;
+  }
+
   Future<void> getStopBusTimes(String stopId, Function(String e) errorCallback,
       {String route = '47', bool isRefresh = false}) async {
     if (isRefresh) {
@@ -196,96 +227,108 @@ class ApiInterface extends ChangeNotifier {
           ),
         ),
     ];
-    //start a timeout timer
-    // final timer = Timer(const Duration(seconds: 10), () {
-    //   //if the timer is not cancelled, then the request has timed out
-    //   if (isLoadingInfo) {
-    //     errorCallback('Request timed out');
-    //     isLoadingInfo = false;
-    //     notifyListeners();
-    //   }
-    // });
-    // try {
-    //   final response = await http.get(
-    //     Uri.parse(
-    //       '${Constants.baseUrl}getStopTimes?route=$route&stop_id=$stopId',
-    //     ),
-    //   );
-    //   if (response.statusCode != 200) {
-    //     timer.cancel();
-    //     errorCallback(jsonDecode(response.body)['error']);
-    //     isLoadingInfo = false;
-    //     notifyListeners();
-    //     busRtpiList = [
-    //       BusRtpi(
-    //         departureMins: 5,
-    //         scheduleType: ScheduleType.scheduled,
-    //         vehicleInfo: VehicleInfo(
-    //           routeShortName: route,
-    //           tripHeadsign: 'Dummy Response',
-    //           tripId: 'trip_id',
-    //         ),
-    //       ),
-    //     ];
-    //   } else if (response.statusCode == 200) {
-    //     timer.cancel();
-    //     isLoadingInfo = false;
-    //     notifyListeners();
-    //     final json = jsonDecode(response.body)['times'];
-    //     busRtpiList = json
-    //         .map<BusRtpi>((busRtpi) => BusRtpi(
-    //             departureMins: busRtpi['departure_mins'],
-    //             scheduleType: ScheduleType.scheduled,
-    //             vehicleInfo: VehicleInfo(
-    //               routeShortName: route,
-    //               tripHeadsign: busRtpi['destination'],
-    //               tripId: busRtpi['trip_id'],
-    //             )))
-    //         .toList();
-    //     log('data updated successfully');
-    //   }
-    // } catch (e) {
-    //   timer.cancel();
-    //   errorCallback(e.toString());
-    // }
   }
 
-  Future<int> getTripUpdates(
-      {required Null Function(String error) errorCallback}) async {
-    final url = Uri.parse('${baseUrl}TripUpdates?format=js');
+  List<BusRoute> searchByRouteName(
+      String trim, Function(String e) errorCallback) {
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          'Cache-Control': 'no-cache',
-          'x-api-key': dotenv.env['NTA_API_KEY']!,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final feedMessage = gtfs.FeedMessage.fromBuffer(response.bodyBytes);
-        _listTripUpdates = feedMessage.entity
-            .map((entity) => TripUpdate(
-                  arrivalTime: entity.tripUpdate.timestamp.toString(),
-                  departureTime: entity.tripUpdate.timestamp.toString(),
-                  stopHeadsign: 'unknown',
-                  stopId: 'unknown',
-                  tripId: entity.tripUpdate.trip.tripId,
-                ))
-            .toList();
-        return _listTripUpdates.length;
-      } else {
-        debugPrint(
-            'Request failed with status: ${response.statusCode}, ${response.body}.');
-        errorCallback(response.body);
-        return -1;
+      if (trim.isEmpty) {
+        return [];
       }
+      trim = trim.toUpperCase();
+      log(trim);
+      if (listRoutes.isEmpty) {
+        loadRoutes(
+          callback: (e) {
+            errorCallback(e);
+          },
+        );
+      }
+      return listRoutes
+          .where((route) => route.routeShortName.contains(trim))
+          .toList();
     } catch (e) {
-      debugPrint('an error has occured: $e');
       errorCallback(e.toString());
-      return -1;
+      return [];
     }
   }
+
+  Future<BusRoute> getRouteDetail(
+      BusRoute route, Function(String error) errorCallback) async {
+    RemoteApi remoteApi = RemoteApi();
+    try {
+      List<String> stopIds = await remoteApi.getStopsIdsByTripId(
+        // route.routeId,
+        '3305_11476',
+        Stage.dev,
+        (e) => errorCallback(e),
+      );
+      List<Stop> stops = [];
+
+      for (String stopId in stopIds) {
+        Stop? stop = (searchByStopId(stopId, (e) {
+          throw Exception(e);
+        }));
+        if (stop != null) {
+          stops.add(stop);
+        }
+      }
+
+      return BusRoute(
+        routeId: route.routeId,
+        routeShortName: route.routeShortName,
+        routeLongName: route.routeLongName,
+        agencyId: route.agencyId,
+        routeStops: stops,
+      );
+    } catch (e) {
+      debugPrint(
+        '${e.toString()} 362',
+      );
+      throw Exception(e);
+    }
+  }
+}
+
+class RemoteApi {
+  static String baseUrl =
+      'https://lxqlo2hbvb.execute-api.eu-west-1.amazonaws.com/';
+
+  Future<List<String>> getStopsIdsByTripId(
+      String tripId, Stage stage, Function(String e) errorCallback) async {
+    Uri uri = Uri.parse('$baseUrl$stage/get-stops?tripId=$tripId');
+    final headers = {
+      "x-api-key": "${dotenv.env['AWS_LAMBDA_KEY']}",
+    };
+    try {
+      Response response = await http.get(
+        uri,
+        headers: headers,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Request failed with status: ${response.statusCode}, ${response.body}');
+      }
+      List json = jsonDecode(response.body) as List;
+      return json.map((e) {
+        return e['stop_id'] as String;
+      }).toList();
+    } catch (e) {
+      log(e.toString());
+      errorCallback(e.toString());
+      return [];
+    }
+  }
+}
+
+enum Stage {
+  dev,
+  stg,
+  prod;
+
+  @override
+  String toString() => name;
 }
 
 class ServiceDetails {
