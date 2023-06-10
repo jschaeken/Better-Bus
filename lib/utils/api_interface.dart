@@ -86,8 +86,9 @@ class ApiInterface extends ChangeNotifier {
   Future<void> loadRoutes({Function(String e)? callback}) async {
     final longString =
         await rootBundle.loadString('assets/gtfs_data/routes.txt');
+    var d = const FirstOccurrenceSettingsDetector(eols: ['\r\n', '\n']);
     _listRoutes = const CsvToListConverter()
-        .convert(longString)
+        .convert(longString, csvSettingsDetector: d)
         .map((row) => BusRoute(
               routeId: row[0].toString(),
               agencyId: row[1].toString(),
@@ -257,7 +258,7 @@ class ApiInterface extends ChangeNotifier {
       BusRoute route, Function(String error) errorCallback) async {
     RemoteApi remoteApi = RemoteApi();
     try {
-      List<String> stopIds = await remoteApi.getStopsIdsByTripId(
+      List<String> stopIds = await remoteApi.getStopIdsByTripId(
         // route.routeId,
         '3305_11476',
         Stage.dev,
@@ -294,7 +295,7 @@ class RemoteApi {
   static String baseUrl =
       'https://lxqlo2hbvb.execute-api.eu-west-1.amazonaws.com/';
 
-  Future<List<String>> getStopsIdsByTripId(
+  Future<List<String>> getStopIdsByTripId(
       String tripId, Stage stage, Function(String e) errorCallback) async {
     Uri uri = Uri.parse('$baseUrl$stage/get-stops?tripId=$tripId');
     final headers = {
@@ -320,6 +321,9 @@ class RemoteApi {
       return [];
     }
   }
+
+//   Future<List<String>> getTripIdByRouteAndDay(
+//       String routeId, int validServiceId) async {}
 }
 
 enum Stage {
