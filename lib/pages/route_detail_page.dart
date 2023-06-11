@@ -15,7 +15,6 @@ class RouteDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    getLatLngBoundsCenter(route.routeStops);
     return Scaffold(
       appBar: AppBar(
         title: Text('Route ${route.routeShortName}'),
@@ -23,12 +22,16 @@ class RouteDetail extends StatelessWidget {
       body: Column(
         children: [
           isMobile
-              ? PlatformMap(
-                  initialCameraPosition: CameraPosition(
-                    target: getLatLngBoundsCenter(route.routeStops),
-                    zoom: 12,
+              ? SizedBox(
+                  height: 400,
+                  width: double.infinity,
+                  child: PlatformMap(
+                    initialCameraPosition: CameraPosition(
+                      target: getLatLngBoundsCenter(route.routeStops),
+                      zoom: 12,
+                    ),
+                    markers: placeMarkers(route.routeStops),
                   ),
-                  markers: placeMarkers(route.routeStops),
                 )
               : SizedBox(
                   height: 400,

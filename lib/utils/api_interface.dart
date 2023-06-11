@@ -258,12 +258,8 @@ class ApiInterface extends ChangeNotifier {
       BusRoute route, Function(String error) errorCallback) async {
     RemoteApi remoteApi = RemoteApi();
     try {
-      List<String> stopIds = await remoteApi.getStopIdsByTripId(
-        // route.routeId,
-        '3305_11476',
-        Stage.dev,
-        (e) => errorCallback(e),
-      );
+      List<String> stopIds = await remoteApi.getStopsByRouteIdAndDirection(
+          route.routeId, Stage.dev, 0);
       List<Stop> stops = [];
 
       for (String stopId in stopIds) {
@@ -293,18 +289,19 @@ class ApiInterface extends ChangeNotifier {
 
 class RemoteApi {
   static String baseUrl =
-      'https://lxqlo2hbvb.execute-api.eu-west-1.amazonaws.com/';
+      'https://83gxay2ofa.execute-api.eu-west-1.amazonaws.com/';
+
+  static Map<String, String> authHeaders = {
+    "x-api-key": "${dotenv.env['AWS_LAMBDA_KEY']}",
+  };
 
   Future<List<String>> getStopIdsByTripId(
       String tripId, Stage stage, Function(String e) errorCallback) async {
     Uri uri = Uri.parse('$baseUrl$stage/get-stops?tripId=$tripId');
-    final headers = {
-      "x-api-key": "${dotenv.env['AWS_LAMBDA_KEY']}",
-    };
     try {
       Response response = await http.get(
         uri,
-        headers: headers,
+        headers: authHeaders,
       );
 
       if (response.statusCode != 200) {
@@ -322,8 +319,33 @@ class RemoteApi {
     }
   }
 
-//   Future<List<String>> getTripIdByRouteAndDay(
-//       String routeId, int validServiceId) async {}
+  Future<List<String>> getStopsByRouteIdAndDirection(
+      String routeId, Stage stage, int direction) async {
+    assert(direction == 0 || direction == 1);
+    Uri uri = Uri.parse(
+        '$baseUrl$stage/stop-routes?route_id=$routeId&direction_id=$direction');
+    try {
+      Response response = await http.get(
+        uri,
+        headers: authHeaders,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Request failed with status: ${response.statusCode}, ${response.body}');
+      }
+
+      List<dynamic> stopIds = jsonDecode(response.body);
+      List<String> stopIdsStrings = [];
+      for (dynamic stopId in stopIds) {
+        stopIdsStrings.add(stopId.toString());
+      }
+      return stopIdsStrings;
+    } catch (e) {
+      log(e.toString());
+      return [];
+    }
+  }
 }
 
 enum Stage {

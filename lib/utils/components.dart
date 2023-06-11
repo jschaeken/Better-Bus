@@ -165,10 +165,10 @@ class ModalSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onSearchChanged;
   final List<dynamic> searchResults;
-  final ValueChanged<dynamic> onTileTap;
+  final Function(dynamic, int) onTileTap;
   final bool isSearchLoading;
   final FocusNode focusNode;
-  final bool isLoadingRoute;
+  final int isLoadingRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -273,14 +273,14 @@ class ModalSearchBar extends StatelessWidget {
                   itemCount: searchResults.length,
                   itemBuilder: (context, index) {
                     return InformationTile(
-                      onTileTap: () => onTileTap(searchResults[index]),
+                      onTileTap: () => onTileTap(searchResults[index], index),
                       titleText: isRouteSearch
                           ? searchResults[index].routeShortName
                           : searchResults[index].stopCode,
                       subtitleText: isRouteSearch
                           ? '${searchResults[index].routeLongName}'
                           : searchResults[index].stopName,
-                      isLoadingRoute: isLoadingRoute,
+                      isLoadingRoute: isLoadingRoute == index,
                       index: index,
                     );
                   },

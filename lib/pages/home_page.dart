@@ -319,14 +319,14 @@ class _MainModalSheetState extends State<MainModalSheet> {
                         }
                       },
                       focusNode: focusNode,
-                      onTileTap: (tile) async {
+                      onTileTap: (tile, index) async {
                         if (selectedSearchIndex == 0) {
                           handleStopTileTap(tile);
                         } else {
-                          searchProvider.isLoadingRoute = true;
+                          searchProvider.isLoadingRoute = index;
                           final busRoute = await handleRouteTileTap(
                               tile, (e) => handleErrorOnTap(e));
-                          searchProvider.isLoadingRoute = false;
+                          searchProvider.isLoadingRoute = -1;
                           pushRoutePage(busRoute);
                         }
                       },

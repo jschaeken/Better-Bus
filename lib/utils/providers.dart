@@ -3,9 +3,9 @@ import 'package:flutter/cupertino.dart';
 class SearchProvider extends ChangeNotifier {
   List<dynamic> _searchResults = [];
 
-  bool _isLoadingRoute = false;
-  bool get isLoadingRoute => _isLoadingRoute;
-  set isLoadingRoute(bool value) {
+  int _isLoadingRoute = -1;
+  int get isLoadingRoute => _isLoadingRoute;
+  set isLoadingRoute(int value) {
     _isLoadingRoute = value;
     notifyListeners();
   }
