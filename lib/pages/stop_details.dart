@@ -53,10 +53,9 @@ class _StopDetailsPageState extends State<StopDetailsPage>
   }
 
   void refreshBusTimes({bool isRefresh = false}) {
-    Provider.of<ApiInterface>(context, listen: false).getStopBusTimes(
+    Provider.of<ApiInterface>(context, listen: false).getStopTimesByStopId(
       widget.stop.stopId,
       (e) => log(e),
-      isRefresh: isRefresh,
     );
   }
 
@@ -339,6 +338,18 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                       itemCount: value.busRtpiList.length,
                                       // physics: const NeverScrollableScrollPhysics(),
                                       itemBuilder: (context, index) {
+                                        bool showRelativeTime = false;
+                                        if ((value.busRtpiList[index]
+                                                        .departureMins ??
+                                                    0) >
+                                                60 ||
+                                            value.busRtpiList[index]
+                                                    .departureMins ==
+                                                null) {
+                                          showRelativeTime = false;
+                                        } else {
+                                          showRelativeTime = true;
+                                        }
                                         return Padding(
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 0,
@@ -403,7 +414,9 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                                       MainAxisSize.min,
                                                   children: [
                                                     Text(
-                                                      '${value.busRtpiList[index].departureMins} ${value.busRtpiList[index].departureMins == 1 ? 'min' : 'mins'}',
+                                                      showRelativeTime
+                                                          ? '${value.busRtpiList[index].departureMins} ${value.busRtpiList[index].departureMins == 1 ? 'min' : 'mins'}'
+                                                          : '${value.busRtpiList[index].arrivalTime.hour}:${value.busRtpiList[index].arrivalTime.minute}',
                                                       style: GoogleFonts.inter(
                                                         color: Theme.of(context)
                                                             .colorScheme

@@ -125,16 +125,16 @@ class TripUpdate {
 class BusRtpi {
   VehicleInfo vehicleInfo;
   ScheduleType scheduleType;
-  DateTime? arrivalTime;
+  DateTime arrivalTime;
   DateTime? departureTime;
-  int departureMins;
+  int? departureMins;
 
   BusRtpi({
     required this.vehicleInfo,
     required this.scheduleType,
-    this.arrivalTime,
+    required this.arrivalTime,
     this.departureTime,
-    required this.departureMins,
+    this.departureMins,
   });
 }
 

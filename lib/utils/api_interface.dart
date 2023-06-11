@@ -15,8 +15,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:gtfs_realtime_bindings/gtfs_realtime_bindings.dart' as gtfs;
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
+import 'package:intl/intl.dart';
 
 class ApiInterface extends ChangeNotifier {
+  RemoteApi remoteApi = RemoteApi();
+
   List<VehicleInfo> _listActiveVehicleInfo = [];
 
   List<Agency> _servingAgencies = [];
@@ -201,33 +204,30 @@ class ApiInterface extends ChangeNotifier {
     return null;
   }
 
-  Future<void> getStopBusTimes(String stopId, Function(String e) errorCallback,
-      {String route = '47', bool isRefresh = false}) async {
-    if (isRefresh) {
-      isLoadingInfo = true;
-    } else {
-      _isLoadingInfo = true;
+  Future<BusRoute?> searchRouteId(
+      String routeId, Function(String e) errorCallback) async {
+    try {
+      if (listRoutes.isEmpty) {
+        loadRoutes(
+          callback: (e) {
+            errorCallback(e);
+          },
+        );
+      }
+      if (routeId.isEmpty) {
+        return null;
+      }
+      final matchingRoutes = listRoutes.where((route) {
+        return route.routeId == routeId;
+      }).toList();
+      if (matchingRoutes.isNotEmpty) {
+        return matchingRoutes.first;
+      }
+    } catch (e) {
+      errorCallback(e.toString());
+      return null;
     }
-    await Future.delayed(const Duration(seconds: 1));
-    servingAgencies = [
-      Agency.dublinBus,
-      Agency.goAhead,
-      Agency.busEireann,
-    ];
-    isLoadingInfo = false;
-    // timer.cancel();
-    busRtpiList = [
-      for (int i = 0; i < 20; i++)
-        BusRtpi(
-          departureMins: i + 1,
-          scheduleType: ScheduleType.scheduled,
-          vehicleInfo: VehicleInfo(
-            routeShortName: '${20 + (2 * i)}',
-            tripHeadsign: 'Dummy Response',
-            tripId: 'trip_id',
-          ),
-        ),
-    ];
+    return null;
   }
 
   List<BusRoute> searchByRouteName(
@@ -258,7 +258,7 @@ class ApiInterface extends ChangeNotifier {
       BusRoute route, Function(String error) errorCallback) async {
     RemoteApi remoteApi = RemoteApi();
     try {
-      List<String> stopIds = await remoteApi.getStopsByRouteIdAndDirection(
+      List<String> stopIds = await remoteApi.queryStopsByRouteIdAndDirection(
           route.routeId, Stage.dev, 0);
       List<Stop> stops = [];
 
@@ -285,6 +285,61 @@ class ApiInterface extends ChangeNotifier {
       throw Exception(e);
     }
   }
+
+  void getStopTimesByStopId(String stopId, Function(String error) errorCallback,
+      {bool isRefesh = false}) async {
+    if (isRefesh) {
+      isLoadingInfo = true;
+    } else {
+      _isLoadingInfo = true;
+    }
+    busRtpiList = [];
+    try {
+      Map<String, dynamic> jsonMap = await remoteApi.queryBusTimesByStopId(
+        stopId,
+        Stage.dev,
+        (e) {
+          throw Exception(e);
+        },
+        minutesIntoFuture: 600,
+      );
+      List<BusRtpi> tempRtpiList = [];
+      jsonMap['Items'].forEach((busTime) {
+        tempRtpiList.add(BusRtpi(
+          arrivalTime: parseTimeString(busTime['arrival_time']),
+          departureMins:
+              getRelativeMins((parseTimeString(busTime['arrival_time']))),
+          scheduleType: ScheduleType.scheduled,
+          vehicleInfo: VehicleInfo(
+            routeShortName: 'Route',
+            tripHeadsign: busTime['trip_id'],
+            tripId: busTime['trip_id'],
+          ),
+        ));
+      });
+      // tempRtpiList.sort((a, b) => a.arrivalTime.compareTo(b.arrivalTime));
+      busRtpiList = tempRtpiList;
+      isLoadingInfo = false;
+    } catch (e) {
+      isLoadingInfo = false;
+      debugPrint(
+        '${e.toString()} 362',
+      );
+      throw Exception(e);
+    }
+  }
+
+  int getRelativeMins(DateTime dateTime) {
+    return dateTime.difference(DateTime.now()).inMinutes;
+  }
+
+  parseTimeString(busTime) {
+    //parse a string like 13:38:36 into a DateTime, for today, hours, minutes, seconds
+    var parts = busTime.split(':');
+    var now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, int.parse(parts[0]),
+        int.parse(parts[1]), int.parse(parts[2]));
+  }
 }
 
 class RemoteApi {
@@ -295,7 +350,9 @@ class RemoteApi {
     "x-api-key": "${dotenv.env['AWS_LAMBDA_KEY']}",
   };
 
-  Future<List<String>> getStopIdsByTripId(
+  static ApiInterface apiInterface = ApiInterface();
+
+  Future<List<String>> queryStopIdsByTripId(
       String tripId, Stage stage, Function(String e) errorCallback) async {
     Uri uri = Uri.parse('$baseUrl$stage/get-stops?tripId=$tripId');
     try {
@@ -319,7 +376,7 @@ class RemoteApi {
     }
   }
 
-  Future<List<String>> getStopsByRouteIdAndDirection(
+  Future<List<String>> queryStopsByRouteIdAndDirection(
       String routeId, Stage stage, int direction) async {
     assert(direction == 0 || direction == 1);
     Uri uri = Uri.parse(
@@ -345,6 +402,42 @@ class RemoteApi {
       log(e.toString());
       return [];
     }
+  }
+
+  Future<Map<String, dynamic>> queryBusTimesByStopId(
+      String stopId, Stage stage, Function(String e) errorCallback,
+      {int minutesIntoFuture = 60}) async {
+    String timeNow = formatDateTime(DateTime.now());
+    String maxArrivalTime = formatDateTime(
+        DateTime.now().add(Duration(minutes: minutesIntoFuture)));
+
+    Uri uri = Uri.parse(
+        '$baseUrl$stage/bus-times-at-stop?stop_id=$stopId&time_now=$timeNow&max_arrival_time=$maxArrivalTime');
+    log(uri.toString());
+    try {
+      Response response = await http.get(
+        uri,
+        headers: authHeaders,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Request failed with status: ${response.statusCode}, ${response.body}');
+      }
+
+      Map<String, dynamic> busRtpiJson = jsonDecode(response.body);
+      return busRtpiJson;
+    } catch (e) {
+      log(e.toString());
+      errorCallback(e.toString());
+      throw Exception(e);
+    }
+  }
+
+  String formatDateTime(DateTime dateTime) {
+    String formatted = DateFormat.Hms().format(dateTime);
+    log(formatted, name: 'formatted');
+    return formatted;
   }
 }
 
