@@ -2,66 +2,172 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:better_bus_dublin/pages/stop_details.dart';
 import 'package:better_bus_dublin/utils/components.dart';
+import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 
-class RouteDetail extends StatelessWidget {
-  RouteDetail({super.key, required this.route});
+class RouteDetail extends StatefulWidget {
+  const RouteDetail({super.key, required this.route1, required this.route2});
 
-  final BusRoute route;
+  final BusRoute route1;
+  final BusRoute route2;
+
+  @override
+  State<RouteDetail> createState() => _RouteDetailState();
+}
+
+class _RouteDetailState extends State<RouteDetail> {
   final isMobile = Platform.isIOS || Platform.isAndroid;
+
+  late BusRoute currentRoute;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    currentRoute = widget.route1;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Route ${route.routeShortName}'),
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        automaticallyImplyLeading: true,
+        leading: IconButton(
+          color: Theme.of(context).colorScheme.onPrimary,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(15),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50),
+          child: Container(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      currentRoute.routeLongName ?? '',
+                      style: TextStyle(
+                        fontSize: Constants.headerFontSize,
+                        fontWeight: Constants.headerFontWeight,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ).animate().scaleY(),
+        ),
+
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+        title: BoldTileText(currentRoute.routeShortName),
+        //make app bar height react to title text length
+
+        elevation: 6,
+        actions: [
+          //flip route direction
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                currentRoute = currentRoute == widget.route1
+                    ? widget.route2
+                    : widget.route1;
+              });
+            },
+            child: Row(
+              children: [
+                Text(
+                  'Switch Direction',
+                  style: TextStyle(
+                      fontSize: Constants.subHeaderFontSize,
+                      fontWeight: Constants.subHeaderFontWeight,
+                      color: Theme.of(context).colorScheme.onPrimary),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Icon(
+                    Icons.swap_horiz_rounded,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      body: Column(
+      body: Stack(
+        alignment: Alignment.topCenter,
         children: [
           isMobile
-              ? SizedBox(
-                  height: 400,
-                  width: double.infinity,
+              ? FractionallySizedBox(
+                  heightFactor: .65,
                   child: PlatformMap(
                     initialCameraPosition: CameraPosition(
-                      target: getLatLngBoundsCenter(route.routeStops),
+                      target: getLatLngBoundsCenter(currentRoute.routeStops),
                       zoom: 12,
                     ),
-                    markers: placeMarkers(route.routeStops),
+                    markers: placeMarkers(currentRoute.routeStops),
                   ),
                 )
-              : SizedBox(
-                  height: 400,
-                  width: double.infinity,
+              : FractionallySizedBox(
+                  heightFactor: .65,
                   child: Image.asset(
                     'assets/images/appleMap.jpg',
                     fit: BoxFit.cover,
                   ),
                 ),
-          Flexible(
-            child: ListView.builder(
-              itemCount: route.routeStops.length,
-              itemBuilder: (context, index) {
-                return InformationTile(
-                  onTileTap: () {
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => StopDetailsPage(
-                          stop: route.routeStops[index],
-                        ),
-                      ),
-                    );
-                  },
-                  titleText: route.routeStops[index].stopName,
-                  subtitleText: 'Stop ${route.routeStops[index].stopCode}',
-                  isLoadingRoute: false,
-                  index: index,
-                );
-              },
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: FractionallySizedBox(
+              heightFactor: .35,
+              alignment: Alignment.bottomCenter,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(0),
+                      itemCount: currentRoute.routeStops.length,
+                      itemBuilder: (context, index) {
+                        return InformationTile(
+                          onTileTap: () {
+                            Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                builder: (context) => StopDetailsPage(
+                                  stop: currentRoute.routeStops[index],
+                                ),
+                              ),
+                            );
+                          },
+                          titleText: currentRoute.routeStops[index].stopName,
+                          subtitleText:
+                              'Stop ${currentRoute.routeStops[index].stopCode}',
+                          isLoadingRoute: false,
+                          index: index,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           )
         ],

@@ -30,10 +30,10 @@ class HomePageState extends State<HomePage> {
   final Duration animationDuration = const Duration(milliseconds: 120);
   final double modalSearchHeight = .8;
   final Curve animationCurve = Curves.easeInSine;
-  final List<double> snapSizes = [.20, .82];
-  final double initialChildSize = 0.20;
-  final double minChildSize = 0.20;
+  final List<double> snapSizes = [.28, .82];
+  final double minChildSize = 0.28;
   final double maxChildSize = .82;
+  final double initialChildSize = 0.28;
   late final GlobalKey<ScaffoldState> scaffoldKey;
   final isMobile = Platform.isIOS || Platform.isAndroid;
 
@@ -324,10 +324,11 @@ class _MainModalSheetState extends State<MainModalSheet> {
                           handleStopTileTap(tile);
                         } else {
                           searchProvider.isLoadingRoute = index;
-                          final busRoute = await handleRouteTileTap(
-                              tile, (e) => handleErrorOnTap(e));
+                          final (busRoute1, busRoute2) =
+                              await handleRouteTileTap(
+                                  tile, (e) => handleErrorOnTap(e));
                           searchProvider.isLoadingRoute = -1;
-                          pushRoutePage(busRoute);
+                          pushRoutePage(busRoute1, busRoute2);
                         }
                       },
                     ),
@@ -501,18 +502,25 @@ class _MainModalSheetState extends State<MainModalSheet> {
         CupertinoPageRoute(builder: (context) => StopDetailsPage(stop: stop)));
   }
 
-  Future<BusRoute> handleRouteTileTap(
+  Future<(BusRoute, BusRoute)> handleRouteTileTap(
       BusRoute route, Function(String e) errorCallback) async {
-    BusRoute returnedRoute =
-        await Provider.of<ApiInterface>(context, listen: false)
-            .getRouteDetail(route, errorCallback);
-    log(returnedRoute.routeStops.length.toString());
-    return returnedRoute;
+    var res = await Provider.of<ApiInterface>(context, listen: false)
+        .getRouteDetail(route, errorCallback);
+    BusRoute returnedRoute1 = res.$1;
+    log('returned route 1 stops length: ${returnedRoute1.routeStops.length}');
+    BusRoute returnedRoute2 = res.$2;
+    log('returned route 2 stops length: ${returnedRoute2.routeStops.length}');
+    return (returnedRoute1, returnedRoute2);
   }
 
-  void pushRoutePage(BusRoute route) {
-    Navigator.push(context,
-        CupertinoPageRoute(builder: (context) => RouteDetail(route: route)));
+  void pushRoutePage(BusRoute route1, BusRoute route2) {
+    Navigator.push(
+        context,
+        CupertinoPageRoute(
+            builder: (context) => RouteDetail(
+                  route1: route1,
+                  route2: route2,
+                )));
   }
 
   void searchBusStopsByRoute(String trim) {

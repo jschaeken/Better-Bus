@@ -254,29 +254,49 @@ class ApiInterface extends ChangeNotifier {
     }
   }
 
-  Future<BusRoute> getRouteDetail(
+  Future<(BusRoute, BusRoute)> getRouteDetail(
       BusRoute route, Function(String error) errorCallback) async {
     RemoteApi remoteApi = RemoteApi();
     try {
-      List<String> stopIds = await remoteApi.queryStopsByRouteIdAndDirection(
-          route.routeId, Stage.dev, 0);
-      List<Stop> stops = [];
-
-      for (String stopId in stopIds) {
+      List<String> stopIds1 =
+          await remoteApi.queryStopsByRouteIdAndDirection(route.routeId, 0);
+      List<Stop> stops1 = [];
+      for (String stopId in stopIds1) {
         Stop? stop = (searchByStopId(stopId, (e) {
           throw Exception(e);
         }));
         if (stop != null) {
-          stops.add(stop);
+          stops1.add(stop);
         }
       }
 
-      return BusRoute(
-        routeId: route.routeId,
-        routeShortName: route.routeShortName,
-        routeLongName: route.routeLongName,
-        agencyId: route.agencyId,
-        routeStops: stops,
+      List<String> stopIds2 =
+          await remoteApi.queryStopsByRouteIdAndDirection(route.routeId, 1);
+      List<Stop> stops2 = [];
+      for (String stopId in stopIds2) {
+        Stop? stop = (searchByStopId(stopId, (e) {
+          throw Exception(e);
+        }));
+        if (stop != null) {
+          stops2.add(stop);
+        }
+      }
+
+      return (
+        BusRoute(
+          routeId: route.routeId,
+          routeShortName: route.routeShortName,
+          routeLongName: route.routeLongName,
+          agencyId: route.agencyId,
+          routeStops: stops1,
+        ),
+        BusRoute(
+          routeId: route.routeId,
+          routeShortName: route.routeShortName,
+          routeLongName: flipRouteLongName(route.routeLongName),
+          agencyId: route.agencyId,
+          routeStops: stops2,
+        )
       );
     } catch (e) {
       debugPrint(
@@ -288,20 +308,15 @@ class ApiInterface extends ChangeNotifier {
 
   void getStopTimesByStopId(String stopId, Function(String error) errorCallback,
       {bool isRefesh = false}) async {
-    if (isRefesh) {
-      isLoadingInfo = true;
-    } else {
-      _isLoadingInfo = true;
-    }
+    _isLoadingInfo = true;
     busRtpiList = [];
     try {
       Map<String, dynamic> jsonMap = await remoteApi.queryBusTimesByStopId(
         stopId,
-        Stage.dev,
         (e) {
           throw Exception(e);
         },
-        minutesIntoFuture: 600,
+        minutesIntoFuture: 240,
       );
       List<BusRtpi> tempRtpiList = [];
       jsonMap['Items'].forEach((busTime) {
@@ -340,6 +355,21 @@ class ApiInterface extends ChangeNotifier {
     return DateTime(now.year, now.month, now.day, int.parse(parts[0]),
         int.parse(parts[1]), int.parse(parts[2]));
   }
+
+  String flipRouteLongName(String? routeLongName) {
+    if (routeLongName == null) {
+      return '';
+    }
+    log('initial routeLongName: $routeLongName');
+    List<String> split = routeLongName.split(' – ');
+    if (split.length == 2) {
+      log('flipped routeLongName: ${split[1]} – ${split[0]}');
+      return '${split[1]} - ${split[0]}';
+    } else {
+      log('split.length != 2, split: $split, split.length: ${split.length}');
+      return routeLongName;
+    }
+  }
 }
 
 class RemoteApi {
@@ -377,8 +407,9 @@ class RemoteApi {
   }
 
   Future<List<String>> queryStopsByRouteIdAndDirection(
-      String routeId, Stage stage, int direction) async {
+      String routeId, int direction) async {
     assert(direction == 0 || direction == 1);
+    String stage = dotenv.env['STAGE'] ?? 'dev';
     Uri uri = Uri.parse(
         '$baseUrl$stage/stop-routes?route_id=$routeId&direction_id=$direction');
     try {
@@ -405,11 +436,12 @@ class RemoteApi {
   }
 
   Future<Map<String, dynamic>> queryBusTimesByStopId(
-      String stopId, Stage stage, Function(String e) errorCallback,
+      String stopId, Function(String e) errorCallback,
       {int minutesIntoFuture = 60}) async {
     String timeNow = formatDateTime(DateTime.now());
     String maxArrivalTime = formatDateTime(
         DateTime.now().add(Duration(minutes: minutesIntoFuture)));
+    String stage = dotenv.env['STAGE'] ?? 'dev';
 
     Uri uri = Uri.parse(
         '$baseUrl$stage/bus-times-at-stop?stop_id=$stopId&time_now=$timeNow&max_arrival_time=$maxArrivalTime');
