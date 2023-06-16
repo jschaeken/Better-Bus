@@ -14,6 +14,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -30,12 +31,14 @@ class HomePageState extends State<HomePage> {
   final Duration animationDuration = const Duration(milliseconds: 120);
   final double modalSearchHeight = .8;
   final Curve animationCurve = Curves.easeInSine;
-  final List<double> snapSizes = [.28, .82];
-  final double minChildSize = 0.28;
+  final List<double> snapSizes = [.26, .82];
+  final double minChildSize = 0.26;
   final double maxChildSize = .82;
-  final double initialChildSize = 0.28;
+  final double initialChildSize = 0.26;
   late final GlobalKey<ScaffoldState> scaffoldKey;
   final isMobile = Platform.isIOS || Platform.isAndroid;
+  late final BitmapDescriptor clusterImage;
+  late final PlatformMapController mapController;
 
   @override
   void initState() {
@@ -43,6 +46,11 @@ class HomePageState extends State<HomePage> {
     super.initState();
     scaffoldKey = GlobalKey();
     initialStopsLoad();
+  }
+
+  loadClusterMarkerImage() async {
+    clusterImage = await BitmapDescriptor.fromAssetImage(
+        const ImageConfiguration(), 'assets/images/dublinBusLogoSmall.png');
   }
 
   initialStopsLoad() async {
@@ -53,6 +61,22 @@ class HomePageState extends State<HomePage> {
             .showSnackBar(SnackBar(content: Text(errorString)));
       }
     });
+  }
+
+  mapCreatedHandler(PlatformMapController controller) async {
+    mapController = controller;
+    setState(() {});
+    Provider.of<ApiInterface>(context, listen: false)
+        .initFluster(1, 20, clusterImage);
+  }
+
+  handleCameraMove(CameraPosition camPos) {
+    Provider.of<ApiInterface>(context, listen: false).currentCamPos = camPos;
+  }
+
+  refreshMapClusters() async {
+    Provider.of<ApiInterface>(context, listen: false)
+        .updateClustersForCamPos(await mapController.getVisibleRegion());
   }
 
   initialRoutesLoad() async {
@@ -80,11 +104,22 @@ class HomePageState extends State<HomePage> {
           alignment: Alignment.bottomCenter,
           children: [
             Stack(
+              fit: StackFit.expand,
               children: [
                 isMobile
-                    ? const MapView()
+                    ? MapView(
+                        onMapCreated: (mapController) =>
+                            mapCreatedHandler(mapController),
+                        cameraIdleCallback: () => refreshMapClusters(),
+                        onCameraMove: (camPos) => handleCameraMove(camPos),
+                        markers: Provider.of<ApiInterface>(context)
+                            .currentClusters
+                            .map((marker) => marker.toMarker())
+                            .toSet(),
+                      )
                     : Image.asset(
                         'assets/images/appleMap.jpg',
+                        fit: BoxFit.cover,
                       ),
                 SafeArea(
                   child: Column(
@@ -157,6 +192,39 @@ class HomePageState extends State<HomePage> {
                 );
               },
             ),
+            //banner ad
+            // Container(
+            //   height: 50,
+            //   decoration: BoxDecoration(
+            //     gradient: const LinearGradient(
+            //       colors: [
+            //         Colors.red,
+            //         Colors.purple,
+            //       ],
+            //       begin: Alignment.topLeft,
+            //       end: Alignment.bottomRight,
+            //     ),
+            //     border: Border.all(
+            //       color: Colors.white,
+            //       strokeAlign: BorderSide.strokeAlignInside,
+            //       width: 2,
+            //     ),
+            //   ),
+            //   child: const Center(
+            //     child: Text(
+            //       'Banner Ad would go here',
+            //       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+            //     ),
+            //   )
+            //       .animate(
+            //         onPlay: (controller) => controller.repeat(reverse: true),
+            //       )
+            //       .slideX(
+            //         begin: -.2,
+            //         end: .2,
+            //         duration: const Duration(seconds: 10),
+            //       ),
+            // )
           ],
         ),
       ),
@@ -282,6 +350,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                                       selectedSearchIndex = 0;
                                       searchBusStopsByStopNumber(
                                           searchController.text.trim());
+                                      refocusTextField(focusNode);
                                     }),
                                     text: 'By Stop Number',
                                   ),
@@ -294,6 +363,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                                       selectedSearchIndex = 1;
                                       searchBusStopsByRoute(
                                           searchController.text.trim());
+                                      refocusTextField(focusNode);
                                     }),
                                     text: 'By Route',
                                   )
@@ -539,6 +609,10 @@ class _MainModalSheetState extends State<MainModalSheet> {
   handleErrorOnTap(String error) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+  }
+
+  void refocusTextField(FocusNode focusNode) {
+    FocusScope.of(context).requestFocus(focusNode);
   }
 }
 

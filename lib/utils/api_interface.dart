@@ -8,6 +8,7 @@ import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:csv/csv.dart';
 import 'package:csv/csv_settings_autodetection.dart';
+import 'package:fluster/fluster.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -16,6 +17,7 @@ import 'package:gtfs_realtime_bindings/gtfs_realtime_bindings.dart' as gtfs;
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
+import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 
 class ApiInterface extends ChangeNotifier {
   RemoteApi remoteApi = RemoteApi();
@@ -63,6 +65,13 @@ class ApiInterface extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<MapMarker> _mapMarkers = [];
+  List<MapMarker> get mapMarkers => _mapMarkers;
+  set mapMarkers(List<MapMarker> value) {
+    _mapMarkers = value;
+    notifyListeners();
+  }
+
   List<TripUpdate> _listTripUpdates = [];
   List<TripUpdate> get listTripUpdates => _listTripUpdates;
   set listTripUpdates(List<TripUpdate> value) {
@@ -83,6 +92,12 @@ class ApiInterface extends ChangeNotifier {
     _serviceDetails = value;
     notifyListeners();
   }
+
+  Fluster<MapMarker>? fluster;
+
+  CameraPosition? currentCamPos;
+
+  List<MapMarker> currentClusters = [];
 
   List<BusRtpi> busRtpiList = [];
 
@@ -107,22 +122,79 @@ class ApiInterface extends ChangeNotifier {
       String longString =
           await rootBundle.loadString('assets/gtfs_data/stops.txt');
       var d = const FirstOccurrenceSettingsDetector(eols: ['\r\n', '\n']);
-      _listStops = const CsvToListConverter()
+      const CsvToListConverter()
           .convert(longString, csvSettingsDetector: d)
-          .map((row) {
-        return Stop(
-          stopId: row[0].toString(),
-          stopCode: row[1].toString(),
-          stopName: row[2].toString(),
-          stopLat: double.parse(row[4].toString()),
-          stopLon: double.parse(row[5].toString()),
+          .forEach((row) {
+        _listStops.add(
+          Stop(
+            stopId: row[0].toString(),
+            stopCode: row[1].toString(),
+            stopName: row[2].toString(),
+            stopLat: double.parse(row[4].toString()),
+            stopLon: double.parse(row[5].toString()),
+          ),
         );
-      }).toList();
+        _mapMarkers.add(
+          MapMarker(
+            id: row[0].toString(),
+            infoWindowText: row[1].toString(),
+            icon: BitmapDescriptor.defaultMarker,
+            position: LatLng(
+              double.parse(row[4].toString()),
+              double.parse(row[5].toString()),
+            ),
+          ),
+        );
+      });
+      log('loaded stops: listStopsLength: ${_listStops.length}, mapMarkersLength: ${_mapMarkers.length}');
     } catch (e) {
       if (callback != null) {
         callback(e.toString());
       }
     }
+  }
+
+  Future<void> initFluster(
+    int minZoom,
+    int maxZoom,
+    BitmapDescriptor clusterImage,
+  ) async {
+    fluster = Fluster<MapMarker>(
+      minZoom: minZoom, // The min zoom at clusters will show
+      maxZoom: maxZoom, // The max zoom at clusters will show
+      radius: 150, // Cluster radius in pixels
+      extent: 2048, // Tile extent. Radius is calculated with it.
+      nodeSize: 64, // Size of the KD-tree leaf node.
+      points: _mapMarkers, // The list of markers created before
+      createCluster: (
+        // Create cluster marker
+        BaseCluster cluster,
+        double lng,
+        double lat,
+      ) =>
+          MapMarker(
+        id: cluster.id.toString(),
+        position: LatLng(lat, lng),
+        icon: clusterImage,
+        isCluster: cluster.isCluster,
+        clusterId: cluster.id,
+        pointsSize: cluster.pointsSize,
+        childMarkerId: cluster.childMarkerId,
+      ),
+    );
+  }
+
+  updateClustersForCamPos(LatLngBounds bounds) {
+    currentClusters = fluster?.clusters(
+          [
+            bounds.northeast.longitude,
+            bounds.northeast.latitude,
+            bounds.southwest.longitude,
+            bounds.southwest.latitude,
+          ],
+          currentCamPos?.zoom.toInt() ?? 10,
+        ) ??
+        [];
   }
 
   Future<void> loadServiceAvailability() async {
@@ -308,13 +380,17 @@ class ApiInterface extends ChangeNotifier {
 
   void getStopTimesByStopId(String stopId, Function(String error) errorCallback,
       {bool isRefesh = false}) async {
-    _isLoadingInfo = true;
+    if (isRefesh) {
+      isLoadingInfo = true;
+    } else {
+      _isLoadingInfo = true;
+    }
     busRtpiList = [];
     try {
       Map<String, dynamic> jsonMap = await remoteApi.queryBusTimesByStopId(
         stopId,
         (e) {
-          throw Exception(e);
+          errorCallback('A network error has occured');
         },
         minutesIntoFuture: 240,
       );
@@ -340,7 +416,7 @@ class ApiInterface extends ChangeNotifier {
       debugPrint(
         '${e.toString()} 362',
       );
-      throw Exception(e);
+      errorCallback('An unkonwn error has occured');
     }
   }
 
@@ -445,7 +521,6 @@ class RemoteApi {
 
     Uri uri = Uri.parse(
         '$baseUrl$stage/bus-times-at-stop?stop_id=$stopId&time_now=$timeNow&max_arrival_time=$maxArrivalTime');
-    log(uri.toString());
     try {
       Response response = await http.get(
         uri,
@@ -453,11 +528,13 @@ class RemoteApi {
       );
 
       if (response.statusCode != 200) {
+        log(response.body);
         throw Exception(
             'Request failed with status: ${response.statusCode}, ${response.body}');
       }
 
       Map<String, dynamic> busRtpiJson = jsonDecode(response.body);
+      log('busRtpiJson: $busRtpiJson');
       return busRtpiJson;
     } catch (e) {
       log(e.toString());
@@ -468,7 +545,6 @@ class RemoteApi {
 
   String formatDateTime(DateTime dateTime) {
     String formatted = DateFormat.Hms().format(dateTime);
-    log(formatted, name: 'formatted');
     return formatted;
   }
 }

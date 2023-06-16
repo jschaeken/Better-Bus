@@ -1,4 +1,8 @@
+import 'dart:developer';
+
+import 'package:fluster/fluster.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 
 class BusRoute {
   // route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color
@@ -154,4 +158,44 @@ enum Agency {
   dublinBus,
   goAhead,
   busEireann,
+}
+
+class MapMarker extends Clusterable {
+  final String id;
+  final LatLng position;
+  final BitmapDescriptor? icon;
+  final String? infoWindowText;
+  MapMarker({
+    required this.id,
+    required this.position,
+    this.icon,
+    this.infoWindowText,
+    isCluster = false,
+    clusterId,
+    pointsSize,
+    childMarkerId,
+  }) : super(
+          markerId: id,
+          latitude: position.latitude,
+          longitude: position.longitude,
+          isCluster: isCluster,
+          clusterId: clusterId,
+          pointsSize: pointsSize,
+          childMarkerId: childMarkerId,
+        );
+  Marker toMarker() {
+    return Marker(
+      markerId: MarkerId(id),
+      position: LatLng(
+        position.latitude,
+        position.longitude,
+      ),
+      infoWindow: InfoWindow(title: infoWindowText ?? 'No title'),
+      icon: icon,
+    );
+  }
+
+  onTap() {
+    log('marker $id tapped');
+  }
 }
