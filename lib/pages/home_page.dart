@@ -75,8 +75,17 @@ class HomePageState extends State<HomePage> {
   }
 
   refreshMapClusters() async {
+    final visibleRegion = await mapController.getVisibleRegion();
     Provider.of<ApiInterface>(context, listen: false)
-        .updateClustersForCamPos(await mapController.getVisibleRegion());
+        .updateClustersForCamPos(visibleRegion);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Showing ${Provider.of<ApiInterface>(context, listen: false).currentClusters.length} stops in region: ${visibleRegion.northeast.latitude}, ${visibleRegion.northeast.longitude} - ${visibleRegion.southwest.latitude}, ${visibleRegion.southwest.longitude}'),
+        ),
+      );
+    }
   }
 
   initialRoutesLoad() async {
