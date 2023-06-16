@@ -26,7 +26,7 @@ class MapView extends StatelessWidget {
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
       onMapCreated: (controller) => onMapCreated(controller),
-      onCameraIdle: () => cameraIdleCallback,
+      onCameraIdle: () => cameraIdleCallback(),
       onCameraMove: (position) => onCameraMove(position),
     );
   }

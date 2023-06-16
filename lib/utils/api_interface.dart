@@ -116,7 +116,9 @@ class ApiInterface extends ChangeNotifier {
         .toList();
   }
 
-  Future<void> loadStops({Function(String e)? callback}) async {
+  Future<void> loadStops(
+      {Function(String e)? callback,
+      Function(String stopId)? stopWindowTapped}) async {
     log('loading stops');
     try {
       String longString =
@@ -138,6 +140,9 @@ class ApiInterface extends ChangeNotifier {
           MapMarker(
             id: row[0].toString(),
             infoWindowText: row[1].toString(),
+            windowTapped: (stopId) => stopWindowTapped == null
+                ? null
+                : stopWindowTapped(row[0].toString()),
             icon: BitmapDescriptor.defaultMarker,
             position: LatLng(
               double.parse(row[4].toString()),
@@ -158,43 +163,56 @@ class ApiInterface extends ChangeNotifier {
     int minZoom,
     int maxZoom,
     BitmapDescriptor clusterImage,
+    Function(String id) stopWindowTapped,
   ) async {
+    await checkStopsLoaded();
+    log('init fluster: mapMarkersLength: ${_mapMarkers.length}');
     fluster = Fluster<MapMarker>(
-      minZoom: minZoom, // The min zoom at clusters will show
-      maxZoom: maxZoom, // The max zoom at clusters will show
-      radius: 150, // Cluster radius in pixels
-      extent: 2048, // Tile extent. Radius is calculated with it.
-      nodeSize: 64, // Size of the KD-tree leaf node.
-      points: _mapMarkers, // The list of markers created before
-      createCluster: (
-        // Create cluster marker
-        BaseCluster cluster,
-        double lng,
-        double lat,
-      ) =>
-          MapMarker(
-        id: cluster.id.toString(),
-        position: LatLng(lat, lng),
-        icon: clusterImage,
-        isCluster: cluster.isCluster,
-        clusterId: cluster.id,
-        pointsSize: cluster.pointsSize,
-        childMarkerId: cluster.childMarkerId,
-      ),
-    );
+        minZoom: minZoom, // The min zoom at clusters will show
+        maxZoom: maxZoom, // The max zoom at clusters will show
+        radius: 500, // Cluster radius in pixels
+        extent: 2048, // Tile extent. Radius is calculated with it.
+        nodeSize: 128, // Size of the KD-tree leaf node.
+        points: _mapMarkers, // The list of markers created before
+        createCluster: (
+          // Create cluster marker
+          BaseCluster? cluster,
+          double? lng,
+          double? lat,
+        ) =>
+            MapMarker(
+              id: cluster!.id.toString(),
+              position: LatLng(lat!, lng!),
+              icon: clusterImage,
+              windowTapped: (id) => stopWindowTapped(id),
+              isCluster: cluster.isCluster,
+              clusterId: cluster.id,
+              pointsSize: cluster.pointsSize,
+              childMarkerId: cluster.childMarkerId,
+            ));
+  }
+
+  Future<bool> checkStopsLoaded() async {
+    while (_mapMarkers.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    return true;
   }
 
   updateClustersForCamPos(LatLngBounds bounds) {
     currentClusters = fluster?.clusters(
           [
-            bounds.northeast.longitude,
-            bounds.northeast.latitude,
             bounds.southwest.longitude,
             bounds.southwest.latitude,
+            bounds.northeast.longitude,
+            bounds.northeast.latitude,
           ],
-          currentCamPos?.zoom.toInt() ?? 10,
+          currentCamPos?.zoom.toInt() ?? 0,
         ) ??
         [];
+    notifyListeners();
+    log('curre, zoom: ${currentCamPos?.zoom.toInt()}');
+    log('bounds: ${bounds.southwest.longitude.toStringAsFixed(3)}, ${bounds.southwest.latitude.toStringAsFixed(3)}, ${bounds.northeast.longitude.toStringAsFixed(3)}, ${bounds.northeast.latitude.toStringAsFixed(3)}');
   }
 
   Future<void> loadServiceAvailability() async {

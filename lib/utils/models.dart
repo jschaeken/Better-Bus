@@ -165,9 +165,11 @@ class MapMarker extends Clusterable {
   final LatLng position;
   final BitmapDescriptor? icon;
   final String? infoWindowText;
+  final Function(String stopId) windowTapped;
   MapMarker({
     required this.id,
     required this.position,
+    required this.windowTapped,
     this.icon,
     this.infoWindowText,
     isCluster = false,
@@ -190,7 +192,9 @@ class MapMarker extends Clusterable {
         position.latitude,
         position.longitude,
       ),
-      infoWindow: InfoWindow(title: infoWindowText ?? 'No title'),
+      infoWindow: InfoWindow(
+          title: isCluster ?? false ? '$pointsSize Stops' : '$infoWindowText',
+          onTap: windowTapped(id)),
       icon: icon,
     );
   }

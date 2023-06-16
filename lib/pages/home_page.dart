@@ -46,6 +46,7 @@ class HomePageState extends State<HomePage> {
     super.initState();
     scaffoldKey = GlobalKey();
     initialStopsLoad();
+    loadClusterMarkerImage();
   }
 
   loadClusterMarkerImage() async {
@@ -63,11 +64,27 @@ class HomePageState extends State<HomePage> {
     });
   }
 
+  markerWindowTapped(String stopId) {
+    Stop? stop = Provider.of<ApiInterface>(context, listen: false)
+        .searchByStopId(stopId, (e) => log(e));
+    log(stop.toString());
+    if (stop != null) {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => StopDetailsPage(stop: stop),
+        isScrollControlled: true,
+      );
+    }
+  }
+
   mapCreatedHandler(PlatformMapController controller) async {
     mapController = controller;
+    refreshMapClusters();
     setState(() {});
     Provider.of<ApiInterface>(context, listen: false)
-        .initFluster(1, 20, clusterImage);
+        .initFluster(1, 20, clusterImage, (stopId) {
+      markerWindowTapped(stopId);
+    });
   }
 
   handleCameraMove(CameraPosition camPos) {
@@ -78,14 +95,6 @@ class HomePageState extends State<HomePage> {
     final visibleRegion = await mapController.getVisibleRegion();
     Provider.of<ApiInterface>(context, listen: false)
         .updateClustersForCamPos(visibleRegion);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Showing ${Provider.of<ApiInterface>(context, listen: false).currentClusters.length} stops in region: ${visibleRegion.northeast.latitude}, ${visibleRegion.northeast.longitude} - ${visibleRegion.southwest.latitude}, ${visibleRegion.southwest.longitude}'),
-        ),
-      );
-    }
   }
 
   initialRoutesLoad() async {
@@ -116,20 +125,35 @@ class HomePageState extends State<HomePage> {
               fit: StackFit.expand,
               children: [
                 isMobile
-                    ? MapView(
-                        onMapCreated: (mapController) =>
-                            mapCreatedHandler(mapController),
-                        cameraIdleCallback: () => refreshMapClusters(),
-                        onCameraMove: (camPos) => handleCameraMove(camPos),
-                        markers: Provider.of<ApiInterface>(context)
-                            .currentClusters
-                            .map((marker) => marker.toMarker())
-                            .toSet(),
-                      )
+                    ? Consumer<ApiInterface>(builder: (context, value, child) {
+                        return MapView(
+                          onMapCreated: (mapController) =>
+                              mapCreatedHandler(mapController),
+                          cameraIdleCallback: () => refreshMapClusters(),
+                          onCameraMove: (camPos) => handleCameraMove(camPos),
+                          markers: value.currentClusters
+                              .map((marker) => marker.toMarker())
+                              .toSet(),
+                        );
+                      })
                     : Image.asset(
                         'assets/images/appleMap.jpg',
                         fit: BoxFit.cover,
                       ),
+                SafeArea(
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Container(
+                        color: Colors.red,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(Provider.of<ApiInterface>(context)
+                              .currentClusters
+                              .length
+                              .toString()),
+                        )),
+                  ),
+                ),
                 SafeArea(
                   child: Column(
                     children: [
