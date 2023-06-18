@@ -39,6 +39,7 @@ class HomePageState extends State<HomePage> {
   final isMobile = Platform.isIOS || Platform.isAndroid;
   late final BitmapDescriptor clusterImage;
   late final PlatformMapController mapController;
+  bool continousUpdate = false;
 
   @override
   void initState() {
@@ -51,7 +52,8 @@ class HomePageState extends State<HomePage> {
 
   loadClusterMarkerImage() async {
     clusterImage = await BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(), 'assets/images/dublinBusLogoSmall.png');
+        const ImageConfiguration(),
+        Constants.assetRoutesMap[AssetImages.clusterMarkerIcon]!);
   }
 
   initialStopsLoad() async {
@@ -66,13 +68,13 @@ class HomePageState extends State<HomePage> {
 
   markerWindowTapped(String stopId) {
     Stop? stop = Provider.of<ApiInterface>(context, listen: false)
-        .searchByStopId(stopId, (e) => log(e));
-    log(stop.toString());
+        .searchByStopId(stopId, (e) => genericDebugErrorHandler(e));
     if (stop != null) {
-      showModalBottomSheet(
-        context: context,
-        builder: (context) => StopDetailsPage(stop: stop),
-        isScrollControlled: true,
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => StopDetailsPage(stop: stop),
+        ),
       );
     }
   }
@@ -89,6 +91,9 @@ class HomePageState extends State<HomePage> {
 
   handleCameraMove(CameraPosition camPos) {
     Provider.of<ApiInterface>(context, listen: false).currentCamPos = camPos;
+    if (continousUpdate) {
+      refreshMapClusters();
+    }
   }
 
   refreshMapClusters() async {
@@ -116,7 +121,14 @@ class HomePageState extends State<HomePage> {
       key: scaffoldKey,
       resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).colorScheme.primary,
-      drawer: const HomePageDrawer(),
+      drawerEnableOpenDragGesture: false,
+      drawer: HomePageDrawer(
+          continousUpdate: continousUpdate,
+          continousUpdateChanged: (val) {
+            setState(() {
+              continousUpdate = val;
+            });
+          }),
       body: LayoutBuilder(
         builder: (context, constraints) => Stack(
           alignment: Alignment.bottomCenter,
@@ -137,23 +149,9 @@ class HomePageState extends State<HomePage> {
                         );
                       })
                     : Image.asset(
-                        'assets/images/appleMap.jpg',
+                        Constants.assetRoutesMap[AssetImages.appleMap]!,
                         fit: BoxFit.cover,
                       ),
-                SafeArea(
-                  child: Align(
-                    alignment: Alignment.topRight,
-                    child: Container(
-                        color: Colors.red,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(Provider.of<ApiInterface>(context)
-                              .currentClusters
-                              .length
-                              .toString()),
-                        )),
-                  ),
-                ),
                 SafeArea(
                   child: Column(
                     children: [
@@ -278,6 +276,11 @@ class HomePageState extends State<HomePage> {
     scaffoldKey.currentState!.openDrawer();
     FocusScope.of(context).unfocus();
   }
+
+  genericDebugErrorHandler(String e) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e)));
+  }
 }
 
 class MainModalSheet extends StatefulWidget {
@@ -380,6 +383,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                                   SearchToggleSwitch(
                                     isSelected: selectedSearchIndex == 0,
                                     onTapped: () => setState(() {
+                                      widget.searchTapped();
                                       selectedSearchIndex = 0;
                                       searchBusStopsByStopNumber(
                                           searchController.text.trim());
@@ -393,6 +397,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                                   SearchToggleSwitch(
                                     isSelected: selectedSearchIndex == 1,
                                     onTapped: () => setState(() {
+                                      widget.searchTapped();
                                       selectedSearchIndex = 1;
                                       searchBusStopsByRoute(
                                           searchController.text.trim());
@@ -510,6 +515,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
               ),
               //Saved Stops
               box.isEmpty
+                  //Empty Saved Stops
                   ? Container(
                       alignment: Alignment.center,
                       height: 200,
@@ -538,8 +544,9 @@ class _MainModalSheetState extends State<MainModalSheet> {
                         ),
                       ),
                     )
+                  //Saved Stops List (Horizontal)
                   : SizedBox(
-                      height: 130,
+                      height: 120,
                       width: MediaQuery.of(context).size.width,
                       child: ListView.separated(
                           scrollDirection: Axis.horizontal,
@@ -688,7 +695,13 @@ class SearchToggleSwitch extends StatelessWidget {
 }
 
 class HomePageDrawer extends StatefulWidget {
-  const HomePageDrawer({super.key});
+  const HomePageDrawer(
+      {super.key,
+      this.continousUpdate = false,
+      required this.continousUpdateChanged});
+
+  final bool continousUpdate;
+  final Function(bool) continousUpdateChanged;
 
   @override
   State<HomePageDrawer> createState() => _HomePageDrawerState();
@@ -722,6 +735,12 @@ class _HomePageDrawerState extends State<HomePageDrawer> {
                       color: Theme.of(context).colorScheme.tertiary,
                     ),
                   ),
+                  SwitchListTile(
+                    value: widget.continousUpdate,
+                    onChanged: (value) => widget.continousUpdateChanged(value),
+                    title: const Text('Update Map continously on move (debug)'),
+                    contentPadding: const EdgeInsets.all(0),
+                  )
                 ],
               ),
             ),
@@ -729,14 +748,5 @@ class _HomePageDrawerState extends State<HomePageDrawer> {
         ),
       ),
     );
-  }
-}
-
-class GlobalState extends ChangeNotifier {
-  bool isDarkMode = ThemeMode.system == ThemeMode.dark;
-
-  void toggleDarkMode() {
-    isDarkMode = !isDarkMode;
-    notifyListeners();
   }
 }

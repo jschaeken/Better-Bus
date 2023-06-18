@@ -88,6 +88,65 @@ class SavedStopsPage extends StatelessWidget {
                     },
                   );
                 }),
+            const SizedBox(
+              height: 100,
+            ),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(width: 1),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.tertiary,
+                  borderRadius: BorderRadius.circular(200),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Container(
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.tertiary,
+                      // border: Border.all(color: Colors.white, width: 3),
+                      borderRadius: BorderRadius.circular(200),
+                    ),
+                    height: 300,
+                    width: 300,
+                    child: SizedBox(
+                      width: 90,
+                      height: double.infinity,
+                      child: Stack(
+                        alignment: Alignment.topCenter,
+                        children: [
+                          Positioned(
+                            top: 32,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              height: 90,
+                              width: 90,
+                            ),
+                          ),
+                          Positioned(
+                            top: 112,
+                            child: Container(
+                              height: 160,
+                              width: 15,
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

@@ -25,6 +25,8 @@ class MapView extends StatelessWidget {
       markers: markers,
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
+      compassEnabled: false,
+      rotateGesturesEnabled: false,
       onMapCreated: (controller) => onMapCreated(controller),
       onCameraIdle: () => cameraIdleCallback(),
       onCameraMove: (position) => onCameraMove(position),

@@ -130,7 +130,7 @@ class _RouteDetailState extends State<RouteDetail> {
               : FractionallySizedBox(
                   heightFactor: .65,
                   child: Image.asset(
-                    'assets/images/appleMap.jpg',
+                    Constants.assetRoutesMap[AssetImages.appleMap]!,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -206,6 +206,10 @@ class _RouteDetailState extends State<RouteDetail> {
     for (var stop in routeStops) {
       markers.add(
         Marker(
+          infoWindow: InfoWindow(
+            title: stop.stopCode,
+            onTap: () => handleMarkerTap(stop),
+          ),
           markerId: MarkerId(stop.stopId),
           position: LatLng(stop.stopLat, stop.stopLon),
           consumeTapEvents: true,
@@ -216,5 +220,14 @@ class _RouteDetailState extends State<RouteDetail> {
       );
     }
     return markers;
+  }
+
+  handleMarkerTap(Stop stop) {
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => StopDetailsPage(stop: stop),
+      ),
+    );
   }
 }

@@ -113,7 +113,7 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                         )
                       : Icon(
                           Icons.bookmark_outline,
-                          color: Theme.of(context).colorScheme.onSecondary,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           size: 28,
                         ),
                 )
@@ -524,11 +524,11 @@ class _StopDetailsPageState extends State<StopDetailsPage>
   String? getLogoPathForAgency(Agency servingAgenci) {
     switch (servingAgenci) {
       case Agency.dublinBus:
-        return 'assets/images/dublinBusLogo.jpg';
+        return Constants.assetRoutesMap[AssetImages.dublinBusLogo]!;
       case Agency.goAhead:
-        return 'assets/images/goAheadLogo.png';
+        return Constants.assetRoutesMap[AssetImages.goAheadLogo]!;
       case Agency.busEireann:
-        return 'assets/images/busEireannLogo.jpg';
+        return Constants.assetRoutesMap[AssetImages.busEireannLogo]!;
     }
   }
 }

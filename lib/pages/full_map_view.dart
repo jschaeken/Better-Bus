@@ -5,6 +5,8 @@ import 'package:better_bus_dublin/utils/models.dart';
 import 'package:flutter/material.dart';
 import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 
+import '../utils/constants.dart';
+
 class FullMapView extends StatefulWidget {
   const FullMapView({required this.stop, super.key});
 
@@ -58,7 +60,7 @@ class FullMapViewState extends State<FullMapView> {
               },
             )
           : Image.asset(
-              'assets/images/appleMap.jpg',
+              Constants.assetRoutesMap[AssetImages.appleMap]!,
             ),
     );
   }

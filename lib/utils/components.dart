@@ -63,8 +63,9 @@ class SavedStopTile extends StatelessWidget {
                           maxHeight: 40,
                           maxWidth: 40,
                           child: Image.asset(
-                            'assets/images/dublinBusLogoSmall.png',
-                            filterQuality: FilterQuality.none,
+                            Constants
+                                .assetRoutesMap[AssetImages.clusterMarkerIcon]!,
+                            filterQuality: FilterQuality.high,
                             isAntiAlias: true,
                           ),
                         ),

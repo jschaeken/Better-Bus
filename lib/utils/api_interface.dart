@@ -408,9 +408,8 @@ class ApiInterface extends ChangeNotifier {
       Map<String, dynamic> jsonMap = await remoteApi.queryBusTimesByStopId(
         stopId,
         (e) {
-          errorCallback('A network error has occured');
+          throw ('A network error has occured');
         },
-        minutesIntoFuture: 240,
       );
       List<BusRtpi> tempRtpiList = [];
       jsonMap['Items'].forEach((busTime) {
@@ -431,10 +430,7 @@ class ApiInterface extends ChangeNotifier {
       isLoadingInfo = false;
     } catch (e) {
       isLoadingInfo = false;
-      debugPrint(
-        '${e.toString()} 362',
-      );
-      errorCallback('An unkonwn error has occured');
+      errorCallback(e.toString());
     }
   }
 

@@ -18,4 +18,22 @@ class Constants {
   static const String baseUrl = 'https://example.com/';
 
   static const headerFontWeight = FontWeight.w600;
+
+  static const assetRoutesMap = <AssetImages, String>{
+    AssetImages.dublinBusLogoSmall: 'assets/images/dublinBusLogoSmall.png',
+    AssetImages.dublinBusLogo: 'assets/images/dublinBusLogo.jpg',
+    AssetImages.goAheadLogo: 'assets/images/goAheadLogo.png',
+    AssetImages.clusterMarkerIcon: 'assets/images/clusterMarkerIcon.png',
+    AssetImages.appleMap: 'assets/images/appleMap.jpg',
+    AssetImages.busEireannLogo: 'assets/images/busEireannLogo.jpg',
+  };
+}
+
+enum AssetImages {
+  dublinBusLogoSmall,
+  dublinBusLogo,
+  goAheadLogo,
+  clusterMarkerIcon,
+  appleMap,
+  busEireannLogo,
 }
