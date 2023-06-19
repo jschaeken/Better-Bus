@@ -119,6 +119,7 @@ class ApiInterface extends ChangeNotifier {
   Future<void> loadStops(
       {Function(String e)? callback,
       Function(String stopId)? stopWindowTapped}) async {
+    int i = 0;
     log('loading stops');
     try {
       String longString =
@@ -127,6 +128,7 @@ class ApiInterface extends ChangeNotifier {
       const CsvToListConverter()
           .convert(longString, csvSettingsDetector: d)
           .forEach((row) {
+        i++;
         _listStops.add(
           Stop(
             stopId: row[0].toString(),
@@ -154,6 +156,7 @@ class ApiInterface extends ChangeNotifier {
       log('loaded stops: listStopsLength: ${_listStops.length}, mapMarkersLength: ${_mapMarkers.length}');
     } catch (e) {
       if (callback != null) {
+        log('error loading stops: $e, i: $i');
         callback(e.toString());
       }
     }
@@ -170,7 +173,7 @@ class ApiInterface extends ChangeNotifier {
     fluster = Fluster<MapMarker>(
         minZoom: minZoom, // The min zoom at clusters will show
         maxZoom: maxZoom, // The max zoom at clusters will show
-        radius: 500, // Cluster radius in pixels
+        radius: 50, // Cluster radius in pixels
         extent: 2048, // Tile extent. Radius is calculated with it.
         nodeSize: 128, // Size of the KD-tree leaf node.
         points: _mapMarkers, // The list of markers created before
