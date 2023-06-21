@@ -46,7 +46,9 @@ class HomePageState extends State<HomePage> {
     // TODO: implement initState
     super.initState();
     scaffoldKey = GlobalKey();
+    initialCalendarLoad();
     initialStopsLoad();
+    initialRoutesLoad();
     loadClusterMarkerImage();
   }
 
@@ -64,6 +66,11 @@ class HomePageState extends State<HomePage> {
             .showSnackBar(SnackBar(content: Text(errorString)));
       }
     });
+  }
+
+  initialCalendarLoad() async {
+    await Provider.of<ApiInterface>(context, listen: false)
+        .loadServiceAvailability();
   }
 
   markerWindowTapped(String stopId) {
@@ -139,8 +146,9 @@ class HomePageState extends State<HomePage> {
                 isMobile
                     ? Consumer<ApiInterface>(builder: (context, value, child) {
                         return MapView(
-                          onMapCreated: (mapController) =>
-                              mapCreatedHandler(mapController),
+                          onMapCreated: (mapController) {
+                            mapCreatedHandler(mapController);
+                          },
                           cameraIdleCallback: () => refreshMapClusters(),
                           onCameraMove: (camPos) => handleCameraMove(camPos),
                           markers: value.currentClusters
@@ -617,9 +625,11 @@ class _MainModalSheetState extends State<MainModalSheet> {
     var res = await Provider.of<ApiInterface>(context, listen: false)
         .getRouteDetail(route, errorCallback);
     BusRoute returnedRoute1 = res.$1;
-    log('returned route 1 stops length: ${returnedRoute1.routeStops.length}');
+    log('returned route 1 stops length: ${returnedRoute1.routeStops.length}',
+        name: 'route_tile_tap');
     BusRoute returnedRoute2 = res.$2;
-    log('returned route 2 stops length: ${returnedRoute2.routeStops.length}');
+    log('returned route 2 stops length: ${returnedRoute2.routeStops.length}',
+        name: 'route_tile_tap');
     return (returnedRoute1, returnedRoute2);
   }
 
@@ -740,7 +750,12 @@ class _HomePageDrawerState extends State<HomePageDrawer> {
                     onChanged: (value) => widget.continousUpdateChanged(value),
                     title: const Text('Update Map continously on move (debug)'),
                     contentPadding: const EdgeInsets.all(0),
-                  )
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        ApiInterface().getMinutesSinceDayStart(DateTime.now());
+                      },
+                      child: const Text('test'))
                 ],
               ),
             ),

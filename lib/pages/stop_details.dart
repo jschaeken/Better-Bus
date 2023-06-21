@@ -393,101 +393,32 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                                       } else {
                                                         showRelativeTime = true;
                                                       }
-                                                      return Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                            vertical: 0,
-                                                          ),
-                                                          child: Card(
-                                                            margin:
-                                                                const EdgeInsets
-                                                                        .symmetric(
-                                                                    vertical:
-                                                                        5),
-                                                            shape:
-                                                                RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          5),
-                                                            ),
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .colorScheme
-                                                                .secondary,
-                                                            elevation: 0,
-                                                            child: ListTile(
-                                                              title: Row(
-                                                                children: [
-                                                                  ElevatedButton(
-                                                                    onPressed:
-                                                                        () {},
-                                                                    child: Text(
-                                                                      value
-                                                                          .busRtpiList[
-                                                                              index]
-                                                                          .vehicleInfo
-                                                                          .routeShortName,
-                                                                      style: GoogleFonts.inter(
-                                                                          color: Theme.of(context)
-                                                                              .colorScheme
-                                                                              .onPrimary,
-                                                                          fontWeight: FontWeight
-                                                                              .w600,
-                                                                          fontSize:
-                                                                              Constants.bodyFontSize),
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    width: 10,
-                                                                  ),
-                                                                  Flexible(
-                                                                    child: Text(
-                                                                      value
-                                                                          .busRtpiList[
-                                                                              index]
-                                                                          .vehicleInfo
-                                                                          .tripHeadsign,
-                                                                      style: GoogleFonts.inter(
-                                                                          color: Theme.of(context)
-                                                                              .colorScheme
-                                                                              .onPrimary,
-                                                                          fontWeight: FontWeight
-                                                                              .w600,
-                                                                          fontSize:
-                                                                              Constants.bodyFontSize),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                              trailing: Row(
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .min,
-                                                                children: [
-                                                                  Text(
-                                                                    showRelativeTime
-                                                                        ? '${value.busRtpiList[index].departureMins} ${value.busRtpiList[index].departureMins == 1 ? 'min' : 'mins'}'
-                                                                        : '${value.busRtpiList[index].arrivalTime.hour}:${value.busRtpiList[index].arrivalTime.minute}',
-                                                                    style: GoogleFonts
-                                                                        .inter(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .colorScheme
-                                                                          .onPrimary,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                      fontSize:
-                                                                          Constants
-                                                                              .bodyFontSize,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ));
+                                                      return BusRtpiTile(
+                                                        servingAgencyLogoPath:
+                                                            getLogoPathForAgency(
+                                                                value
+                                                                    .busRtpiList[
+                                                                        index]
+                                                                    .tripInfo
+                                                                    ?.agency),
+                                                        buttonText: value
+                                                                .busRtpiList[
+                                                                    index]
+                                                                .tripInfo
+                                                                ?.routeShortName ??
+                                                            '',
+                                                        titleText: value
+                                                                .busRtpiList[
+                                                                    index]
+                                                                .tripInfo
+                                                                ?.tripHeadsign ??
+                                                            '',
+                                                        trailingText: showRelativeTime
+                                                            ? '${value.busRtpiList[index].departureMins} ${value.busRtpiList[index].departureMins == 1 ? 'min' : 'mins'}'
+                                                            : '${value.busRtpiList[index].arrivalTime.hour}:${value.busRtpiList[index].arrivalTime.minute}',
+                                                        accentButtonOnPressed:
+                                                            () {},
+                                                      );
                                                     }),
                                           ),
                                         ),
@@ -510,9 +441,11 @@ class _StopDetailsPageState extends State<StopDetailsPage>
 
   void handleGetTripUpdateErrorCallback(String error) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(error, style: GoogleFonts.inter()),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error, style: GoogleFonts.inter()),
+        ),
+      );
     }
   }
 
@@ -521,7 +454,7 @@ class _StopDetailsPageState extends State<StopDetailsPage>
     return (arrivalTime.difference(DateTime.now())).inMinutes;
   }
 
-  String? getLogoPathForAgency(Agency servingAgenci) {
+  String? getLogoPathForAgency(Agency? servingAgenci) {
     switch (servingAgenci) {
       case Agency.dublinBus:
         return Constants.assetRoutesMap[AssetImages.dublinBusLogo]!;
@@ -529,7 +462,95 @@ class _StopDetailsPageState extends State<StopDetailsPage>
         return Constants.assetRoutesMap[AssetImages.goAheadLogo]!;
       case Agency.busEireann:
         return Constants.assetRoutesMap[AssetImages.busEireannLogo]!;
+      default:
+        return null;
     }
+  }
+}
+
+class BusRtpiTile extends StatelessWidget {
+  const BusRtpiTile({
+    super.key,
+    required this.buttonText,
+    this.accentButtonOnPressed,
+    required this.titleText,
+    this.subtitleText,
+    this.trailingText,
+    this.servingAgencyLogoPath,
+  });
+
+  final String buttonText;
+  final VoidCallback? accentButtonOnPressed;
+  final String titleText;
+  final String? subtitleText;
+  final String? trailingText;
+  final String? servingAgencyLogoPath;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: 0,
+        ),
+        child: Card(
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(5),
+          ),
+          color: Theme.of(context).colorScheme.secondary,
+          elevation: 0,
+          child: ListTile(
+            leading: servingAgencyLogoPath == null
+                ? null
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(100),
+                    child: Image.asset(servingAgencyLogoPath!,
+                        width: 37, height: 37)),
+            title: Row(
+              children: [
+                buttonText.isEmpty
+                    ? const SizedBox()
+                    : ElevatedButton(
+                        onPressed: () {},
+                        child: Text(
+                          buttonText,
+                          style: GoogleFonts.inter(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: Constants.bodyFontSize),
+                        ),
+                      ),
+                const SizedBox(
+                  width: 10,
+                ),
+                Flexible(
+                  child: Text(
+                    titleText,
+                    style: GoogleFonts.inter(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: Constants.bodyFontSize),
+                  ),
+                ),
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                trailingText == null
+                    ? const SizedBox()
+                    : Text(
+                        trailingText!,
+                        style: GoogleFonts.inter(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: Constants.bodyFontSize,
+                        ),
+                      ),
+              ],
+            ),
+          ),
+        )).animate().fadeIn();
   }
 }
 

@@ -31,6 +31,44 @@ class BusRoute {
   });
 }
 
+class Trip {
+  Trip({
+    required this.tripId,
+    required this.routeShortName,
+    this.agency,
+    required this.routeId,
+    required this.serviceId,
+    required this.tripHeadsign,
+  });
+
+  String tripId;
+  String routeShortName;
+  String routeId;
+  int serviceId;
+  String tripHeadsign;
+  Agency? agency;
+
+  static Trip fromMap({
+    required Map<String, dynamic> tripInfoMap,
+    required (String, Agency?) Function(dynamic routeId) routeNameAndAgency,
+  }) {
+    final nameAndAgency = routeNameAndAgency(tripInfoMap['route_id']);
+    return Trip(
+      tripId: tripInfoMap['trip_id'],
+      routeId: tripInfoMap['route_id'],
+      routeShortName: nameAndAgency.$1,
+      agency: nameAndAgency.$2,
+      serviceId: int.parse(tripInfoMap['service_id']),
+      tripHeadsign: tripInfoMap['trip_headsign'],
+    );
+  }
+
+  @override
+  String toString() {
+    return 'Trip{routeShortname: $routeShortName tripId: $tripId, routeId: $routeId, serviceId: $serviceId, tripHeadsign: $tripHeadsign, agency: $agency}';
+  }
+}
+
 class VehicleInfo {
   List<double>? position;
   String? routeId;
@@ -127,14 +165,14 @@ class TripUpdate {
 }
 
 class BusRtpi {
-  VehicleInfo vehicleInfo;
+  Trip? tripInfo;
   ScheduleType scheduleType;
   DateTime arrivalTime;
   DateTime? departureTime;
   int? departureMins;
 
   BusRtpi({
-    required this.vehicleInfo,
+    required this.tripInfo,
     required this.scheduleType,
     required this.arrivalTime,
     this.departureTime,

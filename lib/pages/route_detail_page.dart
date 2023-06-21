@@ -194,7 +194,8 @@ class _RouteDetailState extends State<RouteDetail> {
         maxLng = stop.stopLon;
       }
     }
-    log('center is ${LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2)}');
+    log('center is ${LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2)}',
+        name: 'center');
     return LatLng(
       (minLat + maxLat) / 2,
       (minLng + maxLng) / 2,

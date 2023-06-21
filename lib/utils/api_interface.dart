@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:better_bus_dublin/utils/models.dart';
+import 'package:better_bus_dublin/utils/remote_api.dart';
 import 'package:csv/csv.dart';
 import 'package:csv/csv_settings_autodetection.dart';
 import 'package:fluster/fluster.dart';
@@ -86,12 +87,7 @@ class ApiInterface extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<ServiceDetails> _serviceDetails = [];
-  List<ServiceDetails> get serviceDetails => _serviceDetails;
-  set serviceDetails(List<ServiceDetails> value) {
-    _serviceDetails = value;
-    notifyListeners();
-  }
+  List<ServiceDetails> serviceDetails = [];
 
   Fluster<MapMarker>? fluster;
 
@@ -100,6 +96,13 @@ class ApiInterface extends ChangeNotifier {
   List<MapMarker> currentClusters = [];
 
   List<BusRtpi> busRtpiList = [];
+
+  bool _isLoadingInfo = false;
+  bool get isLoadingInfo => _isLoadingInfo;
+  set isLoadingInfo(bool value) {
+    _isLoadingInfo = value;
+    notifyListeners();
+  }
 
   Future<void> loadRoutes({Function(String e)? callback}) async {
     final longString =
@@ -171,28 +174,29 @@ class ApiInterface extends ChangeNotifier {
     await checkStopsLoaded();
     log('init fluster: mapMarkersLength: ${_mapMarkers.length}');
     fluster = Fluster<MapMarker>(
-        minZoom: minZoom, // The min zoom at clusters will show
-        maxZoom: maxZoom, // The max zoom at clusters will show
-        radius: 50, // Cluster radius in pixels
-        extent: 2048, // Tile extent. Radius is calculated with it.
-        nodeSize: 128, // Size of the KD-tree leaf node.
-        points: _mapMarkers, // The list of markers created before
-        createCluster: (
-          // Create cluster marker
-          BaseCluster? cluster,
-          double? lng,
-          double? lat,
-        ) =>
-            MapMarker(
-              id: cluster!.id.toString(),
-              position: LatLng(lat!, lng!),
-              icon: clusterImage,
-              windowTapped: (id) => stopWindowTapped(id),
-              isCluster: cluster.isCluster,
-              clusterId: cluster.id,
-              pointsSize: cluster.pointsSize,
-              childMarkerId: cluster.childMarkerId,
-            ));
+      minZoom: minZoom, // The min zoom at clusters will show
+      maxZoom: maxZoom, // The max zoom at clusters will show
+      radius: 50, // Cluster radius in pixels
+      extent: 2048, // Tile extent. Radius is calculated with it.
+      nodeSize: 128, // Size of the KD-tree leaf node.
+      points: _mapMarkers, // The list of markers created before
+      createCluster: (
+        // Create cluster marker
+        BaseCluster? cluster,
+        double? lng,
+        double? lat,
+      ) =>
+          MapMarker(
+        id: cluster!.id.toString(),
+        position: LatLng(lat!, lng!),
+        // icon: clusterImage,
+        windowTapped: (id) => stopWindowTapped(id),
+        isCluster: cluster.isCluster,
+        clusterId: cluster.id,
+        pointsSize: cluster.pointsSize,
+        childMarkerId: cluster.childMarkerId,
+      ),
+    );
   }
 
   Future<bool> checkStopsLoaded() async {
@@ -202,7 +206,7 @@ class ApiInterface extends ChangeNotifier {
     return true;
   }
 
-  updateClustersForCamPos(LatLngBounds bounds) {
+  void updateClustersForCamPos(LatLngBounds bounds) {
     currentClusters = fluster?.clusters(
           [
             bounds.southwest.longitude,
@@ -210,11 +214,12 @@ class ApiInterface extends ChangeNotifier {
             bounds.northeast.longitude,
             bounds.northeast.latitude,
           ],
-          currentCamPos?.zoom.toInt() ?? 0,
+          // currentCamPos?.zoom.toInt() ?? 0,
+          10,
         ) ??
         [];
     notifyListeners();
-    log('curre, zoom: ${currentCamPos?.zoom.toInt()}');
+    log('zoom: ${currentCamPos?.zoom.toInt()}, clusters: ${currentClusters.length}');
     log('bounds: ${bounds.southwest.longitude.toStringAsFixed(3)}, ${bounds.southwest.latitude.toStringAsFixed(3)}, ${bounds.northeast.longitude.toStringAsFixed(3)}, ${bounds.northeast.latitude.toStringAsFixed(3)}');
   }
 
@@ -223,25 +228,26 @@ class ApiInterface extends ChangeNotifier {
       String longString =
           await rootBundle.loadString('assets/gtfs_data/calendar.txt');
       var d = const FirstOccurrenceSettingsDetector(eols: ['\r\n', '\n']);
-      _serviceDetails = const CsvToListConverter()
+      serviceDetails = const CsvToListConverter()
           .convert(longString, csvSettingsDetector: d)
           .map((row) {
         return ServiceDetails(
             serviceId: row[0],
-            monday: row[1].map((number) => number == 1),
-            tuesday: row[2].map((number) => number == 1),
-            wednesday: row[3].map((number) => number == 1),
-            thursday: row[4].map((number) => number == 1),
-            friday: row[5].map((number) => number == 1),
-            saturday: row[6].map((number) => number == 1),
-            sunday: row[7].map((number) => number == 1),
-            startDate: DateTime.tryParse(row[8]) ??
+            binaryList: row.sublist(1, 8).map((number) => number == 1).toList(),
+            monday: row[1] == 1,
+            tuesday: row[2] == 1,
+            wednesday: row[3] == 1,
+            thursday: row[4] == 1,
+            friday: row[5] == 1,
+            saturday: row[6] == 1,
+            sunday: row[7] == 1,
+            startDate: DateTime.tryParse(row[8].toString()) ??
                 DateTime.now().subtract(const Duration(days: 1)),
-            endDate: DateTime.tryParse(row[8]) ??
+            endDate: DateTime.tryParse(row[8].toString()) ??
                 DateTime.now().add(const Duration(days: 100)));
       }).toList();
     } catch (e) {
-      log(e.toString());
+      log(e.toString(), name: 'loadServiceAvailability');
     }
   }
 
@@ -265,13 +271,6 @@ class ApiInterface extends ChangeNotifier {
     }
   }
 
-  bool _isLoadingInfo = false;
-  bool get isLoadingInfo => _isLoadingInfo;
-  set isLoadingInfo(bool value) {
-    _isLoadingInfo = value;
-    notifyListeners();
-  }
-
   Stop? searchByStopId(String stopId, Function(String e) errorCallback) {
     try {
       if (listStops.isEmpty) {
@@ -293,6 +292,28 @@ class ApiInterface extends ChangeNotifier {
     } catch (e) {
       errorCallback(e.toString());
       return null;
+    }
+    return null;
+  }
+
+  Future<Trip?> getTripInfo(
+      String tripId, Function(String e) errorCallback) async {
+    try {
+      final routeInfoMap = await remoteApi.queryRouteByTripId(tripId);
+      if (routeInfoMap['Items'].isEmpty) {
+        log('No trip info found for tripId: $tripId, routeInfoMap: $routeInfoMap');
+
+        return null;
+      } else {
+        final trip = Trip.fromMap(
+          tripInfoMap: routeInfoMap['Items'][0],
+          routeNameAndAgency: (routeId) => getRouteShortNameAndAgency(routeId),
+        );
+        return trip;
+      }
+    } catch (e) {
+      log(e.toString(), name: 'getTripInfo');
+      // errorCallback(e.toString());
     }
     return null;
   }
@@ -386,7 +407,6 @@ class ApiInterface extends ChangeNotifier {
         BusRoute(
           routeId: route.routeId,
           routeShortName: route.routeShortName,
-          routeLongName: flipRouteLongName(route.routeLongName),
           agencyId: route.agencyId,
           routeStops: stops2,
         )
@@ -400,45 +420,100 @@ class ApiInterface extends ChangeNotifier {
   }
 
   void getStopTimesByStopId(String stopId, Function(String error) errorCallback,
-      {bool isRefesh = false}) async {
+      {bool isRefesh = false, bool streamResults = false}) async {
     if (isRefesh) {
       isLoadingInfo = true;
     } else {
       _isLoadingInfo = true;
     }
     busRtpiList = [];
-    try {
-      Map<String, dynamic> jsonMap = await remoteApi.queryBusTimesByStopId(
-        stopId,
-        (e) {
-          throw ('A network error has occured');
-        },
+    Map<String, dynamic> jsonMap = await remoteApi.queryBusTimesByStopId(
+      stopId,
+      (e) {
+        throw ('A network error has occured');
+      },
+    );
+    List<BusRtpi> tempRtpiList = [];
+    List<dynamic> items = jsonMap['Items'] ?? [];
+
+    await Future.forEach(
+      items,
+      ((busTime) async {
+        Trip? tripInfo = await getTripInfo(busTime['trip_id'], (e) {
+          throw ('An error has occured');
+        });
+        // ignore: unnecessary_null_comparison
+        if (tripInfo != null && checkServiceIdValidity(tripInfo.serviceId)) {
+          log('adding ${tripInfo.toString()} to list');
+          tempRtpiList.add(
+            BusRtpi(
+              arrivalTime: minsToDateTime(busTime['arrival_time']),
+              departureMins:
+                  getRelativeMins(minsToDateTime(busTime['arrival_time'])) + 1,
+              scheduleType: ScheduleType.scheduled,
+              tripInfo: tripInfo,
+            ),
+          );
+          if (!streamResults) {
+            isLoadingInfo = false;
+            busRtpiList = tempRtpiList;
+            notifyListeners();
+          }
+        }
+      }),
+    );
+
+    busRtpiList = tempRtpiList;
+    notifyListeners();
+    isLoadingInfo = false;
+    // } catch (e) {
+    //   isLoadingInfo = false;
+    //   // errorCallback(e.toString());
+    //   throw Exception(e);
+    // }
+  }
+
+  //Helper functions
+  bool checkServiceIdValidity(int serviceId) {
+    //get current day and check if serviceId is valid
+    final now = DateTime.now();
+    final day = now.weekday;
+    return serviceDetails
+        .singleWhere((serviceDetail) => serviceDetail.serviceId == serviceId,
+            orElse: () => ServiceDetails.blank())
+        .binaryList[day];
+  }
+
+  (String, Agency?) getRouteShortNameAndAgency(String routeId) {
+    final matchingRoutes = listRoutes.where((route) {
+      return route.routeId == routeId;
+    }).toList();
+    if (matchingRoutes.isNotEmpty) {
+      return (
+        matchingRoutes.first.routeShortName,
+        getAgencyById(matchingRoutes.first.agencyId)
       );
-      List<BusRtpi> tempRtpiList = [];
-      jsonMap['Items'].forEach((busTime) {
-        tempRtpiList.add(BusRtpi(
-          arrivalTime: parseTimeString(busTime['arrival_time']),
-          departureMins:
-              getRelativeMins((parseTimeString(busTime['arrival_time']))),
-          scheduleType: ScheduleType.scheduled,
-          vehicleInfo: VehicleInfo(
-            routeShortName: 'Route',
-            tripHeadsign: busTime['trip_id'],
-            tripId: busTime['trip_id'],
-          ),
-        ));
-      });
-      // tempRtpiList.sort((a, b) => a.arrivalTime.compareTo(b.arrivalTime));
-      busRtpiList = tempRtpiList;
-      isLoadingInfo = false;
-    } catch (e) {
-      isLoadingInfo = false;
-      errorCallback(e.toString());
     }
+    log('No route found for routeId: $routeId');
+    return ('', null);
   }
 
   int getRelativeMins(DateTime dateTime) {
     return dateTime.difference(DateTime.now()).inMinutes;
+  }
+
+  int getMinutesSinceDayStart(DateTime dateTime) {
+    final mins = dateTime
+        .difference(DateTime(
+            dateTime.year, dateTime.month, dateTime.day, 0, 0, 0, 0, 0))
+        .inMinutes;
+    return mins;
+  }
+
+  DateTime minsToDateTime(int mins) {
+    return DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 0, 0, 0, 0, 0)
+        .add(Duration(minutes: mins));
   }
 
   parseTimeString(busTime) {
@@ -449,120 +524,16 @@ class ApiInterface extends ChangeNotifier {
         int.parse(parts[1]), int.parse(parts[2]));
   }
 
-  String flipRouteLongName(String? routeLongName) {
-    if (routeLongName == null) {
-      return '';
+  Agency? getAgencyById(String agencyId) {
+    switch (agencyId) {
+      case '7778019':
+        return Agency.dublinBus;
+      case '7778006':
+        return Agency.goAhead;
+      case '7778021':
+        return Agency.goAhead;
     }
-    log('initial routeLongName: $routeLongName');
-    List<String> split = routeLongName.split(' – ');
-    if (split.length == 2) {
-      log('flipped routeLongName: ${split[1]} – ${split[0]}');
-      return '${split[1]} - ${split[0]}';
-    } else {
-      log('split.length != 2, split: $split, split.length: ${split.length}');
-      return routeLongName;
-    }
-  }
-}
-
-class RemoteApi {
-  static String baseUrl =
-      'https://83gxay2ofa.execute-api.eu-west-1.amazonaws.com/';
-
-  static Map<String, String> authHeaders = {
-    "x-api-key": "${dotenv.env['AWS_LAMBDA_KEY']}",
-  };
-
-  static ApiInterface apiInterface = ApiInterface();
-
-  Future<List<String>> queryStopIdsByTripId(
-      String tripId, Stage stage, Function(String e) errorCallback) async {
-    Uri uri = Uri.parse('$baseUrl$stage/get-stops?tripId=$tripId');
-    try {
-      Response response = await http.get(
-        uri,
-        headers: authHeaders,
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception(
-            'Request failed with status: ${response.statusCode}, ${response.body}');
-      }
-      List json = jsonDecode(response.body) as List;
-      return json.map((e) {
-        return e['stop_id'] as String;
-      }).toList();
-    } catch (e) {
-      log(e.toString());
-      errorCallback(e.toString());
-      return [];
-    }
-  }
-
-  Future<List<String>> queryStopsByRouteIdAndDirection(
-      String routeId, int direction) async {
-    assert(direction == 0 || direction == 1);
-    String stage = dotenv.env['STAGE'] ?? 'dev';
-    Uri uri = Uri.parse(
-        '$baseUrl$stage/stop-routes?route_id=$routeId&direction_id=$direction');
-    try {
-      Response response = await http.get(
-        uri,
-        headers: authHeaders,
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception(
-            'Request failed with status: ${response.statusCode}, ${response.body}');
-      }
-
-      List<dynamic> stopIds = jsonDecode(response.body);
-      List<String> stopIdsStrings = [];
-      for (dynamic stopId in stopIds) {
-        stopIdsStrings.add(stopId.toString());
-      }
-      return stopIdsStrings;
-    } catch (e) {
-      log(e.toString());
-      return [];
-    }
-  }
-
-  Future<Map<String, dynamic>> queryBusTimesByStopId(
-      String stopId, Function(String e) errorCallback,
-      {int minutesIntoFuture = 60}) async {
-    String timeNow = formatDateTime(DateTime.now());
-    String maxArrivalTime = formatDateTime(
-        DateTime.now().add(Duration(minutes: minutesIntoFuture)));
-    String stage = dotenv.env['STAGE'] ?? 'dev';
-
-    Uri uri = Uri.parse(
-        '$baseUrl$stage/bus-times-at-stop?stop_id=$stopId&time_now=$timeNow&max_arrival_time=$maxArrivalTime');
-    try {
-      Response response = await http.get(
-        uri,
-        headers: authHeaders,
-      );
-
-      if (response.statusCode != 200) {
-        log(response.body);
-        throw Exception(
-            'Request failed with status: ${response.statusCode}, ${response.body}');
-      }
-
-      Map<String, dynamic> busRtpiJson = jsonDecode(response.body);
-      log('busRtpiJson: $busRtpiJson');
-      return busRtpiJson;
-    } catch (e) {
-      log(e.toString());
-      errorCallback(e.toString());
-      throw Exception(e);
-    }
-  }
-
-  String formatDateTime(DateTime dateTime) {
-    String formatted = DateFormat.Hms().format(dateTime);
-    return formatted;
+    return null;
   }
 }
 
@@ -577,6 +548,7 @@ enum Stage {
 
 class ServiceDetails {
   int serviceId;
+  List<bool> binaryList;
   bool monday;
   bool tuesday;
   bool wednesday;
@@ -589,6 +561,7 @@ class ServiceDetails {
 
   ServiceDetails({
     required this.serviceId,
+    required this.binaryList,
     required this.monday,
     required this.tuesday,
     required this.wednesday,
@@ -599,4 +572,17 @@ class ServiceDetails {
     required this.startDate,
     required this.endDate,
   });
+
+  ServiceDetails.blank()
+      : serviceId = 0,
+        binaryList = [false, false, false, false, false, false, false],
+        monday = false,
+        tuesday = false,
+        wednesday = false,
+        thursday = false,
+        friday = false,
+        saturday = false,
+        sunday = false,
+        startDate = DateTime.now(),
+        endDate = DateTime.now();
 }

@@ -23,7 +23,7 @@ class Constants {
     AssetImages.dublinBusLogoSmall: 'assets/images/dublinBusLogoSmall.png',
     AssetImages.dublinBusLogo: 'assets/images/dublinBusLogo.jpg',
     AssetImages.goAheadLogo: 'assets/images/goAheadLogo.png',
-    AssetImages.clusterMarkerIcon: 'assets/images/clusterMarkerIconSmall.png',
+    AssetImages.clusterMarkerIcon: 'assets/images/clusterMarkerIcon.png',
     AssetImages.appleMap: 'assets/images/appleMap.jpg',
     AssetImages.busEireannLogo: 'assets/images/busEireannLogo.jpg',
   };
