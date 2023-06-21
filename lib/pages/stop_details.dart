@@ -369,10 +369,9 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                                     ],
                                                   )
                                                 : ListView.builder(
-                                                    shrinkWrap: true,
+                                                    shrinkWrap: false,
                                                     itemCount: value
                                                         .busRtpiList.length,
-                                                    // physics: const NeverScrollableScrollPhysics(),
                                                     itemBuilder:
                                                         (context, index) {
                                                       bool showRelativeTime =
@@ -468,7 +467,7 @@ class _StopDetailsPageState extends State<StopDetailsPage>
   }
 }
 
-class BusRtpiTile extends StatelessWidget {
+class BusRtpiTile extends StatefulWidget {
   const BusRtpiTile({
     super.key,
     required this.buttonText,
@@ -487,6 +486,13 @@ class BusRtpiTile extends StatelessWidget {
   final String? servingAgencyLogoPath;
 
   @override
+  State<BusRtpiTile> createState() => _BusRtpiTileState();
+}
+
+class _BusRtpiTileState extends State<BusRtpiTile> {
+  final ExpansionTileController controller = ExpansionTileController();
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
         padding: const EdgeInsets.symmetric(
@@ -499,21 +505,22 @@ class BusRtpiTile extends StatelessWidget {
           ),
           color: Theme.of(context).colorScheme.secondary,
           elevation: 0,
-          child: ListTile(
-            leading: servingAgencyLogoPath == null
+          child: ExpansionTile(
+            controller: controller,
+            leading: widget.servingAgencyLogoPath == null
                 ? null
                 : ClipRRect(
                     borderRadius: BorderRadius.circular(100),
-                    child: Image.asset(servingAgencyLogoPath!,
+                    child: Image.asset(widget.servingAgencyLogoPath!,
                         width: 37, height: 37)),
             title: Row(
               children: [
-                buttonText.isEmpty
+                widget.buttonText.isEmpty
                     ? const SizedBox()
                     : ElevatedButton(
                         onPressed: () {},
                         child: Text(
-                          buttonText,
+                          widget.buttonText,
                           style: GoogleFonts.inter(
                               color: Theme.of(context).colorScheme.onPrimary,
                               fontWeight: FontWeight.w600,
@@ -525,7 +532,7 @@ class BusRtpiTile extends StatelessWidget {
                 ),
                 Flexible(
                   child: Text(
-                    titleText,
+                    widget.titleText,
                     style: GoogleFonts.inter(
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
@@ -537,10 +544,10 @@ class BusRtpiTile extends StatelessWidget {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                trailingText == null
+                widget.trailingText == null
                     ? const SizedBox()
                     : Text(
-                        trailingText!,
+                        widget.trailingText!,
                         style: GoogleFonts.inter(
                           color: Theme.of(context).colorScheme.onPrimary,
                           fontWeight: FontWeight.w600,
