@@ -243,7 +243,7 @@ class ApiInterface extends ChangeNotifier {
             sunday: row[7] == 1,
             startDate: DateTime.tryParse(row[8].toString()) ??
                 DateTime.now().subtract(const Duration(days: 1)),
-            endDate: DateTime.tryParse(row[8].toString()) ??
+            endDate: DateTime.tryParse(row[9].toString()) ??
                 DateTime.now().add(const Duration(days: 100)));
       }).toList();
     } catch (e) {
@@ -478,7 +478,13 @@ class ApiInterface extends ChangeNotifier {
     //get current day and check if serviceId is valid
     final now = DateTime.now();
     final day = now.weekday;
-    return serviceDetails
+
+    final serviceDetailsTmp = serviceDetails.where((serviceDetail) {
+      return serviceDetail.startDate.isBefore(now) &&
+          serviceDetail.endDate.isAfter(now);
+    }).toList();
+
+    return serviceDetailsTmp
         .singleWhere((serviceDetail) => serviceDetail.serviceId == serviceId,
             orElse: () => ServiceDetails.blank())
         .binaryList[day];
