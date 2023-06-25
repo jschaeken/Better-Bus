@@ -218,8 +218,7 @@ class ApiInterface extends ChangeNotifier {
             bounds.northeast.longitude,
             bounds.northeast.latitude,
           ],
-          // currentCamPos?.zoom.toInt() ?? 0,
-          10,
+          currentCamPos?.zoom.toInt() ?? 0,
         ) ??
         [];
     notifyListeners();
