@@ -479,18 +479,23 @@ class ApiInterface extends ChangeNotifier {
   //Helper functions
   bool checkServiceIdValidity(int serviceId) {
     //get current day and check if serviceId is valid
+
     final now = DateTime.now();
     final day = now.weekday;
+    log('Checking serviceId validity for $serviceId');
+    log('Day is $day');
 
     final serviceDetailsTmp = serviceDetails.where((serviceDetail) {
       return serviceDetail.startDate.isBefore(now) &&
           serviceDetail.endDate.isAfter(now);
     }).toList();
 
+    log('ServiceDetailsTmp length is ${serviceDetailsTmp.length}');
+
     return serviceDetailsTmp
         .singleWhere((serviceDetail) => serviceDetail.serviceId == serviceId,
             orElse: () => ServiceDetails.blank())
-        .binaryList[day];
+        .binaryList[day - 1];
   }
 
   (String, Agency?) getRouteShortNameAndAgency(String routeId) {
