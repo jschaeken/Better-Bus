@@ -41,7 +41,7 @@ class SavedStopTile extends StatelessWidget {
           ),
         ],
       ),
-      width: 155,
+      // width: 155,
       child: Material(
         borderRadius: BorderRadius.circular(12),
         color: Colors.transparent,
@@ -84,6 +84,22 @@ class SavedStopTile extends StatelessWidget {
                     textAlign: TextAlign.start,
                     style: GoogleFonts.inter(
                       color: Theme.of(context).colorScheme.onSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Custom Stop Name Here',
+                    textAlign: TextAlign.start,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      color: Theme.of(context).colorScheme.onSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: Constants.subHeaderFontSize,
                     ),
                   ),
                 ),

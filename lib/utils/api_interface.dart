@@ -155,7 +155,11 @@ class ApiInterface extends ChangeNotifier {
             ),
           ),
         );
+        if (i % 1000 == 0) {
+          log('${mapMarkers[i - 1].latitude}, ${mapMarkers[i - 1].longitude}');
+        }
       });
+
       log('loaded stops: listStopsLength: ${_listStops.length}, mapMarkersLength: ${_mapMarkers.length}');
     } catch (e) {
       if (callback != null) {
@@ -176,9 +180,9 @@ class ApiInterface extends ChangeNotifier {
     fluster = Fluster<MapMarker>(
       minZoom: minZoom, // The min zoom at clusters will show
       maxZoom: maxZoom, // The max zoom at clusters will show
-      radius: 50, // Cluster radius in pixels
+      radius: 150, // Cluster radius in pixels
       extent: 2048, // Tile extent. Radius is calculated with it.
-      nodeSize: 128, // Size of the KD-tree leaf node.
+      nodeSize: 64, // Size of the KD-tree leaf node.
       points: _mapMarkers, // The list of markers created before
       createCluster: (
         // Create cluster marker

@@ -523,7 +523,6 @@ class _MainModalSheetState extends State<MainModalSheet> {
               ),
               //Saved Stops
               box.isEmpty
-                  //Empty Saved Stops
                   ? Container(
                       alignment: Alignment.center,
                       height: 200,
@@ -553,40 +552,39 @@ class _MainModalSheetState extends State<MainModalSheet> {
                       ),
                     )
                   //Saved Stops List (Horizontal)
-                  : SizedBox(
-                      height: 120,
-                      width: MediaQuery.of(context).size.width,
-                      child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: box.length,
-                          itemBuilder: (context, index) {
-                            return box.getAt(index) == null
-                                ? const SizedBox()
-                                : Padding(
-                                    padding: EdgeInsets.only(
-                                      left: index == 0 ? 16 : 0,
-                                      right: index == box.length - 1 ? 16 : 0,
-                                      top: 15,
-                                      bottom: 15,
-                                    ),
-                                    child: SavedStopTile(
-                                      stopNumber: box.getAt(index)!.stopCode,
-                                      busCompany: BusCompany.dublinBus,
-                                      busStopNickname:
-                                          box.getAt(index)!.stopName,
-                                      onTapped: () {
-                                        handleStopTileTap(box.getAt(index)!);
-                                      },
-                                    ),
-                                  );
-                          },
-                          separatorBuilder: (context, index) => const SizedBox(
-                                width: 15,
-                              )),
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: HorizPaddingConstant(
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: GridView(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 1.6,
+                            ),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            children: [
+                              for (int index = 0; index < box.length; index++)
+                                SavedStopTile(
+                                  stopNumber: box.getAt(index)!.stopCode,
+                                  busCompany: BusCompany.dublinBus,
+                                  busStopNickname: box.getAt(index)!.stopName,
+                                  onTapped: () {
+                                    handleStopTileTap(box.getAt(index)!);
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
               const SizedBox(
-                height: 400,
-              )
+                height: 50,
+              ),
             ],
           ),
         ),
