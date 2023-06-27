@@ -130,12 +130,13 @@ class HomePageState extends State<HomePage> {
       backgroundColor: Theme.of(context).colorScheme.primary,
       drawerEnableOpenDragGesture: false,
       drawer: HomePageDrawer(
-          continousUpdate: continousUpdate,
-          continousUpdateChanged: (val) {
-            setState(() {
-              continousUpdate = val;
-            });
-          }),
+        continousUpdate: continousUpdate,
+        continousUpdateChanged: (val) {
+          setState(() {
+            continousUpdate = val;
+          });
+        },
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) => Stack(
           alignment: Alignment.bottomCenter,
@@ -216,7 +217,7 @@ class HomePageState extends State<HomePage> {
                       controller: scrollController,
                       physics: const ClampingScrollPhysics(),
                       child: Container(
-                        color: Theme.of(context).colorScheme.background,
+                        color: Theme.of(context).colorScheme.primary,
                         child: MainModalSheet(
                           searchTapped: () {
                             if (draggableScrollController.size <
@@ -563,7 +564,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
-                              childAspectRatio: 1.6,
+                              childAspectRatio: 2.2,
                             ),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -583,7 +584,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
                       ),
                     ),
               const SizedBox(
-                height: 50,
+                height: 400,
               ),
             ],
           ),
@@ -703,10 +704,11 @@ class SearchToggleSwitch extends StatelessWidget {
 }
 
 class HomePageDrawer extends StatefulWidget {
-  const HomePageDrawer(
-      {super.key,
-      this.continousUpdate = false,
-      required this.continousUpdateChanged});
+  const HomePageDrawer({
+    super.key,
+    this.continousUpdate = false,
+    required this.continousUpdateChanged,
+  });
 
   final bool continousUpdate;
   final Function(bool) continousUpdateChanged;
@@ -746,14 +748,31 @@ class _HomePageDrawerState extends State<HomePageDrawer> {
                   SwitchListTile(
                     value: widget.continousUpdate,
                     onChanged: (value) => widget.continousUpdateChanged(value),
-                    title: const Text('Update Map continously on move (debug)'),
+                    title: Text(
+                      'Update Map continously on move (debug)',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSecondary),
+                    ),
                     contentPadding: const EdgeInsets.all(0),
                   ),
-                  ElevatedButton(
-                      onPressed: () {
-                        ApiInterface().getMinutesSinceDayStart(DateTime.now());
+                  ValueListenableBuilder(
+                    valueListenable: Hive.box<bool>('settings').listenable(),
+                    builder: (ctx, box, child) => SwitchListTile(
+                      value: box.get('showHoursSlider') ?? false,
+                      onChanged: (value) {
+                        box.get('showHoursSlider') == null
+                            ? box.put('showHoursSlider', true)
+                            : box.put('showHoursSlider',
+                                !box.get('showHoursSlider')!);
                       },
-                      child: const Text('test'))
+                      title: Text(
+                        'Show hours slider in stop times page (debug)',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSecondary),
+                      ),
+                      contentPadding: const EdgeInsets.all(0),
+                    ),
+                  ),
                 ],
               ),
             ),

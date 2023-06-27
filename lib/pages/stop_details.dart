@@ -29,11 +29,14 @@ class _StopDetailsPageState extends State<StopDetailsPage>
   //Refresh animation controller
   late AnimationController animController;
 
+  int hoursToShow = 1;
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    refreshBusTimes();
+    loadBusTimes();
+    log(widget.stop.stopId.toString());
     animController = AnimationController(
       vsync: this,
       duration: 300.ms,
@@ -52,13 +55,15 @@ class _StopDetailsPageState extends State<StopDetailsPage>
     }
   }
 
-  Future<void> refreshBusTimes({bool isRefresh = false}) async {
+  Future<void> loadBusTimes(
+      {bool isRefresh = false, int? minutesIntoFuture}) async {
     Provider.of<ApiInterface>(context, listen: false).getStopTimesByStopId(
       widget.stop.stopId,
       (e) {
         handleGetTripUpdateErrorCallback(e);
       },
       isRefesh: isRefresh,
+      minsIntoFuture: minutesIntoFuture,
     );
   }
 
@@ -252,7 +257,9 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                               effects: const [RotateEffect()],
                               child: IconButton(
                                 onPressed: () async {
-                                  refreshBusTimes(isRefresh: true);
+                                  loadBusTimes(
+                                      isRefresh: true,
+                                      minutesIntoFuture: hoursToShow * 60);
                                   value.isLoadingInfo = true;
                                   await animController.animateTo(1);
                                   animController.value = 0;
@@ -266,6 +273,74 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                             )
                           ],
                         ),
+                        ValueListenableBuilder(
+                            valueListenable:
+                                Hive.box<bool>('settings').listenable(),
+                            builder: (context, Box<bool> box, child) {
+                              return box.get('showHoursSlider') ?? false
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .error,
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            const Text(
+                                              'For debugging purposes only',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Flexible(
+                                                  child: DevSlider(
+                                                    min: 1,
+                                                    max: 5,
+                                                    divisions: 4,
+                                                    label: 'Hours to show',
+                                                    onChanged: (val) {
+                                                      setState(() {
+                                                        hoursToShow =
+                                                            val.toInt();
+                                                      });
+                                                    },
+                                                  ),
+                                                ),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                          .symmetric(
+                                                      horizontal: 10),
+                                                  child: Text(
+                                                    'Showing ${hoursToShow == 1 ? '1 hour' : '$hoursToShow hours'}',
+                                                    style: GoogleFonts.inter(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSecondary,
+                                                      fontSize: Constants
+                                                          .bodyFontSize,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Container();
+                            }),
                         Flexible(
                           flex: 5,
                           child: Container(
@@ -300,8 +375,10 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .tertiary,
-                                            onRefresh: () => refreshBusTimes(
-                                                isRefresh: true),
+                                            onRefresh: () => loadBusTimes(
+                                                isRefresh: true,
+                                                minutesIntoFuture:
+                                                    hoursToShow * 60),
                                             child: value.busRtpiList.isEmpty
                                                 ? Flex(
                                                     direction: Axis.vertical,
@@ -374,24 +451,6 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                                         .busRtpiList.length,
                                                     itemBuilder:
                                                         (context, index) {
-                                                      bool showRelativeTime =
-                                                          false;
-                                                      if ((value
-                                                                      .busRtpiList[
-                                                                          index]
-                                                                      .departureMins ??
-                                                                  0) >
-                                                              60 ||
-                                                          value
-                                                                  .busRtpiList[
-                                                                      index]
-                                                                  .departureMins ==
-                                                              null) {
-                                                        showRelativeTime =
-                                                            false;
-                                                      } else {
-                                                        showRelativeTime = true;
-                                                      }
                                                       return BusRtpiTile(
                                                         servingAgencyLogoPath:
                                                             getLogoPathForAgency(
@@ -412,9 +471,11 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                                                 .tripInfo
                                                                 ?.tripHeadsign ??
                                                             '',
-                                                        trailingText: showRelativeTime
-                                                            ? '${value.busRtpiList[index].departureMins} ${value.busRtpiList[index].departureMins == 1 ? 'min' : 'mins'}'
-                                                            : '${value.busRtpiList[index].arrivalTime.hour}:${value.busRtpiList[index].arrivalTime.minute}',
+                                                        trailingText: showTime(
+                                                            value
+                                                                .busRtpiList[
+                                                                    index]
+                                                                .arrivalTime),
                                                         accentButtonOnPressed:
                                                             () {},
                                                       );
@@ -448,11 +509,6 @@ class _StopDetailsPageState extends State<StopDetailsPage>
     }
   }
 
-  int dateTimeToRelative(DateTime arrivalTime) {
-    log('arrival time: $arrivalTime');
-    return (arrivalTime.difference(DateTime.now())).inMinutes;
-  }
-
   String? getLogoPathForAgency(Agency? servingAgenci) {
     switch (servingAgenci) {
       case Agency.dublinBus:
@@ -464,6 +520,66 @@ class _StopDetailsPageState extends State<StopDetailsPage>
       default:
         return null;
     }
+  }
+
+  String showTime(DateTime arrivalTime) {
+    //if time is less than 60 minutes away, show relative time
+    bool isRelativeTime = arrivalTime.difference(DateTime.now()).inMinutes < 60;
+
+    if (isRelativeTime) {
+      return '${arrivalTime.hour}:${arrivalTime.minute}';
+    } else {
+      String hour = arrivalTime.hour < 10
+          ? '0${arrivalTime.hour}'
+          : arrivalTime.hour.toString();
+      String minute = arrivalTime.minute < 10
+          ? '0${arrivalTime.minute}'
+          : arrivalTime.minute.toString();
+      return '$hour:$minute';
+    }
+  }
+}
+
+class DevSlider extends StatefulWidget {
+  const DevSlider({
+    super.key,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.label,
+    required this.onChanged,
+  });
+
+  final double min;
+  final double max;
+  final int divisions;
+  final String label;
+  final ValueChanged<double> onChanged;
+
+  @override
+  State<DevSlider> createState() => _DevSliderState();
+}
+
+class _DevSliderState extends State<DevSlider> {
+  var currentVal = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    return Slider(
+      value: currentVal.toDouble(),
+      min: widget.min,
+      max: widget.max,
+      divisions: widget.divisions,
+      label: widget.label,
+      activeColor: Theme.of(context).colorScheme.secondary,
+      thumbColor: Theme.of(context).colorScheme.secondary,
+      onChanged: (value) {
+        setState(() {
+          currentVal = value.toInt();
+        });
+      },
+      onChangeEnd: (value) => widget.onChanged(value),
+    );
   }
 }
 
@@ -495,69 +611,73 @@ class _BusRtpiTileState extends State<BusRtpiTile> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 0,
-        ),
-        child: Card(
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-          ),
-          color: Theme.of(context).colorScheme.secondary,
-          elevation: 0,
-          child: ExpansionTile(
-            controller: controller,
-            leading: widget.servingAgencyLogoPath == null
-                ? null
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(100),
-                    child: Image.asset(widget.servingAgencyLogoPath!,
-                        width: 37, height: 37)),
-            title: Row(
-              children: [
-                widget.buttonText.isEmpty
-                    ? const SizedBox()
-                    : ElevatedButton(
-                        onPressed: () {},
-                        child: Text(
-                          widget.buttonText,
-                          style: GoogleFonts.inter(
+            padding: const EdgeInsets.symmetric(
+              vertical: 0,
+            ),
+            child: Card(
+              margin: const EdgeInsets.symmetric(vertical: 5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
+              color: Theme.of(context).colorScheme.secondary,
+              elevation: 0,
+              child: ExpansionTile(
+                controller: controller,
+                // leading:
+                // widget.servingAgencyLogoPath == null
+                //     ? null
+                //     : ClipRRect(
+                //         borderRadius: BorderRadius.circular(100),
+                //         child: Image.asset(widget.servingAgencyLogoPath!,
+                //             width: 37, height: 37)),
+                title: Row(
+                  children: [
+                    widget.buttonText.isEmpty
+                        ? const SizedBox()
+                        : ElevatedButton(
+                            onPressed: () {},
+                            child: Text(
+                              widget.buttonText,
+                              style: GoogleFonts.inter(
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: Constants.bodyFontSize),
+                            ),
+                          ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Flexible(
+                      child: Text(
+                        widget.titleText,
+                        style: GoogleFonts.inter(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: Constants.bodyFontSize),
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    widget.trailingText == null
+                        ? const SizedBox()
+                        : Text(
+                            widget.trailingText!,
+                            style: GoogleFonts.inter(
                               color: Theme.of(context).colorScheme.onPrimary,
                               fontWeight: FontWeight.w600,
-                              fontSize: Constants.bodyFontSize),
-                        ),
-                      ),
-                const SizedBox(
-                  width: 10,
+                              fontSize: Constants.bodyFontSize,
+                            ),
+                          ),
+                  ],
                 ),
-                Flexible(
-                  child: Text(
-                    widget.titleText,
-                    style: GoogleFonts.inter(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: Constants.bodyFontSize),
-                  ),
-                ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                widget.trailingText == null
-                    ? const SizedBox()
-                    : Text(
-                        widget.trailingText!,
-                        style: GoogleFonts.inter(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: Constants.bodyFontSize,
-                        ),
-                      ),
-              ],
-            ),
-          ),
-        )).animate().fadeIn();
+              ),
+            )).animate().fadeIn(
+          duration: const Duration(milliseconds: 100),
+        );
   }
 }
 

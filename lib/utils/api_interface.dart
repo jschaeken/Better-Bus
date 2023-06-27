@@ -423,7 +423,9 @@ class ApiInterface extends ChangeNotifier {
   }
 
   void getStopTimesByStopId(String stopId, Function(String error) errorCallback,
-      {bool isRefesh = false, bool streamResults = false}) async {
+      {bool isRefesh = false,
+      bool streamResults = false,
+      int? minsIntoFuture}) async {
     if (isRefesh) {
       isLoadingInfo = true;
     } else {
@@ -435,9 +437,10 @@ class ApiInterface extends ChangeNotifier {
       (e) {
         throw ('A network error has occured');
       },
+      minutesIntoFuture: minsIntoFuture ?? 60,
     );
     List<BusRtpi> tempRtpiList = [];
-    List<dynamic> items = jsonMap['Items'] ?? [];
+    List<dynamic> items = jsonMap['filtered'];
 
     await Future.forEach(
       items,
@@ -446,7 +449,7 @@ class ApiInterface extends ChangeNotifier {
           throw ('An error has occured');
         });
         // ignore: unnecessary_null_comparison
-        if (tripInfo != null && checkServiceIdValidity(tripInfo.serviceId)) {
+        if (tripInfo != null) {
           log('adding ${tripInfo.toString()} to list');
           tempRtpiList.add(
             BusRtpi(
@@ -477,27 +480,6 @@ class ApiInterface extends ChangeNotifier {
   }
 
   //Helper functions
-  bool checkServiceIdValidity(int serviceId) {
-    //get current day and check if serviceId is valid
-
-    final now = DateTime.now();
-    final day = now.weekday;
-    log('Checking serviceId validity for $serviceId');
-    log('Day is $day');
-
-    final serviceDetailsTmp = serviceDetails.where((serviceDetail) {
-      return serviceDetail.startDate.isBefore(now) &&
-          serviceDetail.endDate.isAfter(now);
-    }).toList();
-
-    log('ServiceDetailsTmp length is ${serviceDetailsTmp.length}');
-
-    return serviceDetailsTmp
-        .singleWhere((serviceDetail) => serviceDetail.serviceId == serviceId,
-            orElse: () => ServiceDetails.blank())
-        .binaryList[day - 1];
-  }
-
   (String, Agency?) getRouteShortNameAndAgency(String routeId) {
     final matchingRoutes = listRoutes.where((route) {
       return route.routeId == routeId;
@@ -525,9 +507,10 @@ class ApiInterface extends ChangeNotifier {
   }
 
   DateTime minsToDateTime(int mins) {
-    return DateTime(DateTime.now().year, DateTime.now().month,
+    var dateTime = DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 0, 0, 0, 0, 0)
         .add(Duration(minutes: mins));
+    return dateTime;
   }
 
   parseTimeString(busTime) {

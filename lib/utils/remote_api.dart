@@ -93,7 +93,7 @@ class RemoteApi {
 
   Future<Map<String, dynamic>> queryBusTimesByStopId(
       String stopId, Function(String e) errorCallback,
-      {int minutesIntoFuture = 60}) async {
+      {required int minutesIntoFuture}) async {
     int timeNow = apiInterface.getMinutesSinceDayStart(DateTime.now());
     int maxArrivalTime = timeNow + minutesIntoFuture;
     String stage = dotenv.env['STAGE'] ?? 'dev';
@@ -112,6 +112,7 @@ class RemoteApi {
         throw Exception(
             'Request failed with status: ${response.statusCode}, ${response.body}');
       }
+      log('response: ${response.statusCode}, ${response.body}');
 
       Map<String, dynamic> busRtpiJson = jsonDecode(response.body);
       log('items returned: ${busRtpiJson.length}');

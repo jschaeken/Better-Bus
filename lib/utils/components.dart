@@ -81,25 +81,10 @@ class SavedStopTile extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     busStopNickname,
-                    textAlign: TextAlign.start,
-                    style: GoogleFonts.inter(
-                      color: Theme.of(context).colorScheme.onSecondary,
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Custom Stop Name Here',
-                    textAlign: TextAlign.start,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.start,
                     style: GoogleFonts.inter(
                       color: Theme.of(context).colorScheme.onSecondary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: Constants.subHeaderFontSize,
                     ),
                   ),
                 ),

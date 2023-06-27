@@ -24,6 +24,7 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(StopAdapter());
   await Hive.openBox<Stop>('savedStops');
+  await Hive.openBox<bool>('settings');
 
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider<SearchProvider>(
