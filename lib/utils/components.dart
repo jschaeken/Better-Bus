@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +43,6 @@ class SavedStopTile extends StatelessWidget {
           ),
         ],
       ),
-      // width: 155,
       child: Material(
         borderRadius: BorderRadius.circular(12),
         color: Colors.transparent,
@@ -174,6 +175,7 @@ class ModalSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    log('isRouteSearch: $isRouteSearch');
     if (searchResults.isEmpty &&
         !isSearchLoading &&
         controller.text.isNotEmpty) {
@@ -313,8 +315,8 @@ class InformationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: index == 0
-          ? const EdgeInsets.only(top: 12, bottom: 3)
-          : const EdgeInsets.symmetric(vertical: 3),
+          ? const EdgeInsets.only(top: 5, bottom: 2)
+          : const EdgeInsets.symmetric(vertical: 2),
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -345,7 +347,7 @@ class InformationTile extends StatelessWidget {
           ),
           trailing: PressableIcon(
             backgroundColor:
-                Theme.of(context).colorScheme.tertiary.withOpacity(.4),
+                Theme.of(context).colorScheme.tertiary.withOpacity(1),
             isLoading: isLoadingRoute,
             onPressed: () {
               onTileTap();
@@ -376,6 +378,8 @@ class PressableIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: backgroundColor ?? Theme.of(context).colorScheme.primary,
+      surfaceTintColor:
+          backgroundColor ?? Theme.of(context).colorScheme.primary,
       borderRadius: BorderRadius.circular(100),
       child: InkWell(
         borderRadius: BorderRadius.circular(100),

@@ -65,6 +65,7 @@ class _StopDetailsPageState extends State<StopDetailsPage>
       isRefesh: isRefresh,
       minsIntoFuture: minutesIntoFuture,
     );
+    lightTouchImpact();
   }
 
   @override
@@ -100,7 +101,7 @@ class _StopDetailsPageState extends State<StopDetailsPage>
               return IconButton(
                 onPressed: () {
                   isInitialLoad = false;
-                  HapticFeedback.lightImpact();
+                  lightTouchImpact();
                   if (value.containsKey(widget.stop.stopCode)) {
                     log('removing stop ${widget.stop.stopCode} from savedStops');
                     value.delete(widget.stop.stopCode);
@@ -165,7 +166,7 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        HapticFeedback.lightImpact();
+                        lightTouchImpact();
                         Navigator.push(
                           context,
                           CupertinoPageRoute(
@@ -174,6 +175,9 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                           ),
                         );
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.tertiary,
+                      ),
                       child: Row(children: [
                         Text(
                           'Show on map',
@@ -226,31 +230,34 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const BoldTileText('Times'),
-                                StatefulBuilder(builder: (context, fresh) {
-                                  //refresh every second
-                                  Future.delayed(const Duration(seconds: 5),
-                                      () {
-                                    if (context.mounted) {
-                                      fresh(() {});
-                                    }
-                                  });
-                                  return Text(
-                                      value.isLoadingInfo
-                                          ? ''
-                                          : 'Real Time Data Updated: ${DateTime.now().difference(updateTime).inMinutes < 1 ? 'Just now' : '${DateTime.now().difference(updateTime).inMinutes} minute${DateTime.now().difference(updateTime).inMinutes == 1 ? '' : 's'} ago'}',
-                                      style: GoogleFonts.inter(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondary,
-                                        fontSize: Constants.bodyFontSize,
-                                      ));
-                                })
-                              ],
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const BoldTileText('Times'),
+                                  StatefulBuilder(builder: (context, fresh) {
+                                    //refresh every second
+                                    Future.delayed(const Duration(seconds: 5),
+                                        () {
+                                      if (context.mounted) {
+                                        fresh(() {});
+                                      }
+                                    });
+                                    return Text(
+                                        value.isLoadingInfo
+                                            ? ''
+                                            : 'Real Time Data Updated: ${DateTime.now().difference(updateTime).inMinutes < 1 ? 'Just now' : '${DateTime.now().difference(updateTime).inMinutes} minute${DateTime.now().difference(updateTime).inMinutes == 1 ? '' : 's'} ago'}',
+                                        style: GoogleFonts.inter(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSecondary,
+                                          fontSize: Constants.bodyFontSize,
+                                        ));
+                                  })
+                                ],
+                              ),
                             ),
                             Animate(
                               controller: animController,
@@ -524,10 +531,12 @@ class _StopDetailsPageState extends State<StopDetailsPage>
 
   String showTime(DateTime arrivalTime) {
     //if time is less than 60 minutes away, show relative time
-    bool isRelativeTime = arrivalTime.difference(DateTime.now()).inMinutes < 60;
+    int relativeTime = arrivalTime.difference(DateTime.now()).inMinutes;
 
-    if (isRelativeTime) {
-      return '${arrivalTime.hour}:${arrivalTime.minute}';
+    if (relativeTime < 60) {
+      return relativeTime == 0
+          ? 'Due'
+          : '${arrivalTime.difference(DateTime.now()).inMinutes} mins';
     } else {
       String hour = arrivalTime.hour < 10
           ? '0${arrivalTime.hour}'
@@ -537,6 +546,18 @@ class _StopDetailsPageState extends State<StopDetailsPage>
           : arrivalTime.minute.toString();
       return '$hour:$minute';
     }
+  }
+
+  void lightTouchImpact() {
+    HapticFeedback.lightImpact();
+  }
+
+  void mediumTouchImpact() {
+    HapticFeedback.mediumImpact();
+  }
+
+  void heavyTouchImpact() {
+    HapticFeedback.heavyImpact();
   }
 }
 
@@ -636,6 +657,10 @@ class _BusRtpiTileState extends State<BusRtpiTile> {
                         ? const SizedBox()
                         : ElevatedButton(
                             onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.tertiary,
+                            ),
                             child: Text(
                               widget.buttonText,
                               style: GoogleFonts.inter(

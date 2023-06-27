@@ -14,6 +14,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:location/location.dart';
 import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -88,12 +89,15 @@ class HomePageState extends State<HomePage> {
 
   mapCreatedHandler(PlatformMapController controller) async {
     mapController = controller;
-    refreshMapClusters();
-    setState(() {});
     Provider.of<ApiInterface>(context, listen: false)
         .initFluster(1, 20, clusterImage, (stopId) {
       markerWindowTapped(stopId);
     });
+    animateToLocation(
+      controller,
+    );
+    setState(() {});
+    refreshMapClusters();
   }
 
   handleCameraMove(CameraPosition camPos) {
@@ -290,6 +294,40 @@ class HomePageState extends State<HomePage> {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e)));
   }
+
+  void animateToLocation(PlatformMapController controller) async {
+    Location location = Location();
+
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+    LocationData locationData;
+
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return;
+      }
+    }
+
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    locationData = await location.getLocation();
+    controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(locationData.latitude!, locationData.longitude!),
+          zoom: 15,
+        ),
+      ),
+    );
+  }
 }
 
 class MainModalSheet extends StatefulWidget {
@@ -322,6 +360,7 @@ class _MainModalSheetState extends State<MainModalSheet> {
 
   @override
   Widget build(BuildContext context) {
+    log('rebuild home page');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -391,13 +430,16 @@ class _MainModalSheetState extends State<MainModalSheet> {
                                 children: [
                                   SearchToggleSwitch(
                                     isSelected: selectedSearchIndex == 0,
-                                    onTapped: () => setState(() {
-                                      widget.searchTapped();
-                                      selectedSearchIndex = 0;
-                                      searchBusStopsByStopNumber(
-                                          searchController.text.trim());
-                                      refocusTextField(focusNode);
-                                    }),
+                                    onTapped: () {
+                                      log('search by stop number');
+                                      setState(() {
+                                        widget.searchTapped();
+                                        selectedSearchIndex = 0;
+                                        searchBusStopsByStopNumber(
+                                            searchController.text.trim());
+                                        refocusTextField(focusNode);
+                                      });
+                                    },
                                     text: 'By Stop Number',
                                   ),
                                   const SizedBox(
@@ -559,12 +601,13 @@ class _MainModalSheetState extends State<MainModalSheet> {
                         child: SizedBox(
                           width: double.infinity,
                           child: GridView(
+                            padding: const EdgeInsets.only(),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
-                              childAspectRatio: 2.2,
+                              childAspectRatio: 1.8,
                             ),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -685,7 +728,8 @@ class SearchToggleSwitch extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          onTap: () {
+          onTap: () {},
+          onTapDown: (details) {
             onTapped();
           },
           child: Center(

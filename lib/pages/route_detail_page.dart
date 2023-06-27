@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'dart:ui';
 import 'package:better_bus_dublin/pages/stop_details.dart';
 import 'package:better_bus_dublin/utils/components.dart';
 import 'package:better_bus_dublin/utils/constants.dart';
@@ -92,6 +93,9 @@ class _RouteDetailState extends State<RouteDetail> {
                     : widget.route1;
               });
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.tertiary,
+            ),
             child: Row(
               children: [
                 Text(
@@ -115,58 +119,66 @@ class _RouteDetailState extends State<RouteDetail> {
       ),
       body: Stack(
         alignment: Alignment.topCenter,
+        fit: StackFit.expand,
         children: [
           isMobile
-              ? FractionallySizedBox(
-                  heightFactor: .65,
-                  child: PlatformMap(
-                    initialCameraPosition: CameraPosition(
-                      target: getLatLngBoundsCenter(currentRoute.routeStops),
-                      zoom: 12,
-                    ),
-                    markers: placeMarkers(currentRoute.routeStops),
+              ? PlatformMap(
+                  initialCameraPosition: CameraPosition(
+                    target: getLatLngBoundsCenter(currentRoute.routeStops),
+                    zoom: 12,
                   ),
+                  markers: placeMarkers(currentRoute.routeStops),
                 )
-              : FractionallySizedBox(
-                  heightFactor: .65,
-                  child: Image.asset(
-                    Constants.assetRoutesMap[AssetImages.appleMap]!,
-                    fit: BoxFit.cover,
-                  ),
+              : Image.asset(
+                  Constants.assetRoutesMap[AssetImages.appleMap]!,
+                  fit: BoxFit.cover,
                 ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: FractionallySizedBox(
-              heightFactor: .35,
-              alignment: Alignment.bottomCenter,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(0),
-                      itemCount: currentRoute.routeStops.length,
-                      itemBuilder: (context, index) {
-                        return InformationTile(
-                          onTileTap: () {
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                builder: (context) => StopDetailsPage(
-                                  stop: currentRoute.routeStops[index],
+          DraggableScrollableSheet(
+            snapSizes: const [
+              .15,
+              .8,
+            ],
+            minChildSize: .15,
+            maxChildSize: .8,
+            builder: (context, scrollController) => ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(15),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: 10,
+                  sigmaY: 10,
+                ),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(0),
+                        itemCount: currentRoute.routeStops.length,
+                        controller: scrollController,
+                        itemBuilder: (context, index) {
+                          return InformationTile(
+                            onTileTap: () {
+                              Navigator.push(
+                                context,
+                                CupertinoPageRoute(
+                                  builder: (context) => StopDetailsPage(
+                                    stop: currentRoute.routeStops[index],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          titleText: currentRoute.routeStops[index].stopName,
-                          subtitleText:
-                              'Stop ${currentRoute.routeStops[index].stopCode}',
-                          isLoadingRoute: false,
-                          index: index,
-                        );
-                      },
+                              );
+                            },
+                            titleText: currentRoute.routeStops[index].stopName,
+                            subtitleText:
+                                'Stop ${currentRoute.routeStops[index].stopCode}',
+                            isLoadingRoute: false,
+                            index: index,
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           )

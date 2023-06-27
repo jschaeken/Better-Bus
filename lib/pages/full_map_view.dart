@@ -21,16 +21,24 @@ class FullMapViewState extends State<FullMapView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(15),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(15),
+            ),
           ),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        title: BoldTileText('Stop ${widget.stop.stopCode}'),
-        elevation: 6,
-        automaticallyImplyLeading: true,
-      ),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          title: BoldTileText('Stop ${widget.stop.stopCode}'),
+          elevation: 6,
+          automaticallyImplyLeading: true,
+          iconTheme: const IconThemeData(
+            color: Colors.white,
+          ),
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+            color: Theme.of(context).colorScheme.onSecondary,
+          )),
       extendBodyBehindAppBar: true,
       body: (Platform.isIOS || Platform.isAndroid)
           ? PlatformMap(
@@ -59,8 +67,14 @@ class FullMapViewState extends State<FullMapView> {
                 ),
               },
             )
-          : Image.asset(
-              Constants.assetRoutesMap[AssetImages.appleMap]!,
+          : Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  Constants.assetRoutesMap[AssetImages.appleMap]!,
+                  fit: BoxFit.cover,
+                ),
+              ],
             ),
     );
   }
