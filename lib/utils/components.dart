@@ -181,6 +181,8 @@ class ModalSearchBar extends StatelessWidget {
         controller.text.isNotEmpty) {
       HapticFeedback.selectionClick();
     }
+    var keyboardType =
+        isRouteSearch ? TextInputType.text : TextInputType.number;
     return Column(
       children: [
         TextField(
@@ -202,8 +204,7 @@ class ModalSearchBar extends StatelessWidget {
             }
           },
           focusNode: focusNode,
-          keyboardType:
-              isRouteSearch ? TextInputType.text : TextInputType.number,
+          keyboardType: keyboardType,
           style: GoogleFonts.inter(
             color: Theme.of(context).colorScheme.onPrimary,
             fontSize: Constants.headerFontSize,
@@ -229,6 +230,7 @@ class ModalSearchBar extends StatelessWidget {
                       onSearchChanged('');
                       FocusScope.of(context).requestFocus(focusNode);
                     },
+                    color: Theme.of(context).colorScheme.onPrimary,
                   )
                 : const SizedBox(),
             hintText: isRouteSearch ? 'Search Routes' : 'Search Stops',

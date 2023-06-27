@@ -93,11 +93,11 @@ class HomePageState extends State<HomePage> {
         .initFluster(1, 20, clusterImage, (stopId) {
       markerWindowTapped(stopId);
     });
-    animateToLocation(
+    await animateToLocation(
       controller,
     );
-    setState(() {});
     refreshMapClusters();
+    setState(() {});
   }
 
   handleCameraMove(CameraPosition camPos) {
@@ -295,7 +295,7 @@ class HomePageState extends State<HomePage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e)));
   }
 
-  void animateToLocation(PlatformMapController controller) async {
+  Future<void> animateToLocation(PlatformMapController controller) async {
     Location location = Location();
 
     bool serviceEnabled;
@@ -319,7 +319,7 @@ class HomePageState extends State<HomePage> {
     }
 
     locationData = await location.getLocation();
-    controller.animateCamera(
+    await controller.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
           target: LatLng(locationData.latitude!, locationData.longitude!),
