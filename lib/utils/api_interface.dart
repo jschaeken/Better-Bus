@@ -1,10 +1,5 @@
-//import http package
-// ignore_for_file: unused_import
-
 import 'dart:async';
-import 'dart:convert';
 import 'dart:developer';
-import 'package:better_bus_dublin/utils/constants.dart';
 import 'package:better_bus_dublin/utils/models.dart';
 import 'package:better_bus_dublin/utils/remote_api.dart';
 import 'package:csv/csv.dart';
@@ -12,12 +7,6 @@ import 'package:csv/csv_settings_autodetection.dart';
 import 'package:fluster/fluster.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:gtfs_realtime_bindings/gtfs_realtime_bindings.dart' as gtfs;
-import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
-import 'package:intl/intl.dart';
 import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 
 class ApiInterface extends ChangeNotifier {
@@ -191,9 +180,9 @@ class ApiInterface extends ChangeNotifier {
         double? lat,
       ) =>
           MapMarker(
-        id: cluster!.id.toString(),
+        icon: cluster!.isCluster ? clusterImage : null,
+        id: cluster.id.toString(),
         position: LatLng(lat!, lng!),
-        // icon: clusterImage,
         windowTapped: (id) => stopWindowTapped(id),
         isCluster: cluster.isCluster,
         clusterId: cluster.id,
@@ -422,6 +411,34 @@ class ApiInterface extends ChangeNotifier {
     }
   }
 
+  Future<VehicleInfo?> getVehicleLocation(BusRtpi busRtpi) async {
+    try {
+      final vehicleInfoMap = await remoteApi
+          .queryVehicleLocationByTripId(busRtpi.tripInfo!.tripId);
+      if ((vehicleInfoMap['Items'] ?? []).isEmpty) {
+        log('No vehicle info found for tripId: ${vehicleInfoMap['Items']}');
+      } else {
+        log('vehicleInfoMap: $vehicleInfoMap');
+        return VehicleInfo(
+          tripId: vehicleInfoMap['Items'][0]['trip_id'],
+          routeShortName: busRtpi.tripInfo!.routeShortName,
+          tripHeadsign: busRtpi.tripInfo!.tripHeadsign,
+          agencyId: busRtpi.tripInfo!.agency,
+          position: [
+            vehicleInfoMap['Items'][0]['latitude'],
+            vehicleInfoMap['Items'][0]['longitude']
+          ],
+          vehicleId: vehicleInfoMap['Items'][0]['vehicle_id'],
+          routeId: vehicleInfoMap['Items'][0]['route_id'],
+        );
+      }
+    } catch (e) {
+      log(e.toString(), name: 'getVehicleLocation');
+      // errorCallback(e.toString());
+    }
+    return null;
+  }
+
   void getStopTimesByStopId(String stopId, Function(String error) errorCallback,
       {bool isRefesh = false,
       bool streamResults = false,
@@ -448,7 +465,6 @@ class ApiInterface extends ChangeNotifier {
         Trip? tripInfo = await getTripInfo(busTime['trip_id'], (e) {
           throw ('An error has occured');
         });
-        // ignore: unnecessary_null_comparison
         if (tripInfo != null) {
           log('adding ${tripInfo.toString()} to list');
           tempRtpiList.add(
@@ -531,6 +547,37 @@ class ApiInterface extends ChangeNotifier {
         return Agency.goAhead;
     }
     return null;
+  }
+
+  Future<void> getAllActiveBuses() async {
+    var current;
+    Map<String, dynamic> jsonMap = {};
+    try {
+      jsonMap = await remoteApi.queryAllActiveBuses();
+      _listActiveVehicleInfo = [];
+      jsonMap['Items'].forEach((vehicleInfo) {
+        current = vehicleInfo;
+        _listActiveVehicleInfo.add(
+          VehicleInfo(
+            tripId: vehicleInfo['trip_id'],
+            agencyId: Agency.dublinBus,
+            routeShortName: 'Unknown',
+            tripHeadsign: 'Unknown',
+            position: [
+              vehicleInfo['latitude'].toDouble(),
+              vehicleInfo['longitude'].toDouble(),
+            ],
+            vehicleId: vehicleInfo['vehicle_id'],
+            routeId: vehicleInfo['route_id'],
+          ),
+        );
+      });
+      log('listActiveVehicleInfo length: ${_listActiveVehicleInfo.length}');
+      notifyListeners();
+    } catch (e) {
+      log('error on getAllActiveBuses: $e, ${current.toString()}');
+      throw Exception(e);
+    }
   }
 }
 

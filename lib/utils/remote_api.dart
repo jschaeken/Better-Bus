@@ -128,4 +128,53 @@ class RemoteApi {
     String formatted = DateFormat.Hms().format(dateTime);
     return formatted;
   }
+
+  Future<Map<String, dynamic>> queryVehicleLocationByTripId(
+      String tripId) async {
+    String stage = dotenv.env['STAGE'] ?? 'dev';
+    Uri uri = Uri.parse('$baseUrl$stage/bus-loc?tripId=$tripId');
+
+    try {
+      Response response = await http.get(
+        uri,
+        headers: authHeaders,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Request failed with status: ${response.statusCode}, ${response.body}');
+      }
+
+      Map<String, dynamic> busLocList = jsonDecode(response.body);
+      return busLocList;
+    } catch (e) {
+      log(e.toString(), name: 'queryVehicleLocationByTripId');
+      return Future.value({});
+    }
+  }
+
+  Future<Map<String, dynamic>> queryAllActiveBuses() {
+    String stage = dotenv.env['STAGE'] ?? 'dev';
+    Uri uri = Uri.parse('$baseUrl$stage/bus-loc?getAll=1');
+
+    try {
+      return http
+          .get(
+        uri,
+        headers: authHeaders,
+      )
+          .then((response) {
+        if (response.statusCode != 200) {
+          throw Exception(
+              'Request failed with status: ${response.statusCode}, ${response.body}');
+        }
+
+        Map<String, dynamic> busLocList = jsonDecode(response.body);
+        return busLocList;
+      });
+    } catch (e) {
+      log(e.toString(), name: 'queryAllActiveBuses');
+      return Future.value({});
+    }
+  }
 }

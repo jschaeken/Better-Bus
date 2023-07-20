@@ -389,82 +389,83 @@ class _MainModalSheetState extends State<MainModalSheet> {
               Consumer<SearchProvider>(
                 builder: (context, searchProvider, child) => Column(
                   children: [
-                    Container(
-                      height: 50,
-                      margin: const EdgeInsets.only(
-                        bottom: 10,
-                        top: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(2.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Stack(
-                            children: [
-                              AnimatedAlign(
-                                duration: const Duration(milliseconds: 120),
-                                alignment: selectedSearchIndex == 0
-                                    ? Alignment.centerLeft
-                                    : Alignment.centerRight,
-                                curve: Curves.easeIn,
-                                child: FractionallySizedBox(
-                                  widthFactor: .5,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .tertiary,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    height: 50,
-                                  ),
-                                ),
-                              ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  SearchToggleSwitch(
-                                    isSelected: selectedSearchIndex == 0,
-                                    onTapped: () {
-                                      log('search by stop number');
-                                      setState(() {
-                                        widget.searchTapped();
-                                        selectedSearchIndex = 0;
-                                        searchBusStopsByStopNumber(
-                                            searchController.text.trim());
-                                        refocusTextField(focusNode);
-                                      });
-                                    },
-                                    text: 'By Stop Number',
-                                  ),
-                                  const SizedBox(
-                                    width: 4,
-                                  ),
-                                  SearchToggleSwitch(
-                                    isSelected: selectedSearchIndex == 1,
-                                    onTapped: () => setState(() {
-                                      widget.searchTapped();
-                                      selectedSearchIndex = 1;
-                                      searchBusStopsByRoute(
-                                          searchController.text.trim());
-                                      refocusTextField(focusNode);
-                                    }),
-                                    text: 'By Route',
-                                  )
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Container(
+                    //   height: 50,
+                    //   margin: const EdgeInsets.only(
+                    //     bottom: 10,
+                    //     top: 3,
+                    //   ),
+                    //   decoration: BoxDecoration(
+                    //     color: Theme.of(context).colorScheme.secondary,
+                    //     borderRadius: BorderRadius.circular(10),
+                    //   ),
+                    //   child: Padding(
+                    //     padding: const EdgeInsets.all(2.0),
+                    //     child: ClipRRect(
+                    //       borderRadius: BorderRadius.circular(8),
+                    //       child: Stack(
+                    //         children: [
+                    //           AnimatedAlign(
+                    //             duration: const Duration(milliseconds: 120),
+                    //             alignment: selectedSearchIndex == 0
+                    //                 ? Alignment.centerLeft
+                    //                 : Alignment.centerRight,
+                    //             curve: Curves.easeIn,
+                    //             child: FractionallySizedBox(
+                    //               widthFactor: .5,
+                    //               child: Container(
+                    //                 decoration: BoxDecoration(
+                    //                   color: Theme.of(context)
+                    //                       .colorScheme
+                    //                       .tertiary,
+                    //                   borderRadius: BorderRadius.circular(10),
+                    //                 ),
+                    //                 height: 50,
+                    //               ),
+                    //             ),
+                    //           ),
+                    //           Row(
+                    //             mainAxisAlignment:
+                    //                 MainAxisAlignment.spaceBetween,
+                    //             children: [
+                    //               SearchToggleSwitch(
+                    //                 isSelected: selectedSearchIndex == 0,
+                    //                 onTapped: () {
+                    //                   log('search by stop number');
+                    //                   setState(() {
+                    //                     widget.searchTapped();
+                    //                     selectedSearchIndex = 0;
+                    //                     searchBusStopsByStopNumber(
+                    //                         searchController.text.trim());
+                    //                     refocusTextField(focusNode);
+                    //                   });
+                    //                 },
+                    //                 text: 'By Stop Number',
+                    //               ),
+                    //               const SizedBox(
+                    //                 width: 4,
+                    //               ),
+                    //               SearchToggleSwitch(
+                    //                 isSelected: selectedSearchIndex == 1,
+                    //                 onTapped: () => setState(() {
+                    //                   widget.searchTapped();
+                    //                   selectedSearchIndex = 1;
+                    //                   searchBusStopsByRoute(
+                    //                       searchController.text.trim());
+                    //                   refocusTextField(focusNode);
+                    //                 }),
+                    //                 text: 'By Route',
+                    //               )
+                    //             ],
+                    //           ),
+                    //         ],
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+
                     ModalSearchBar(
-                      isRouteSearch: selectedSearchIndex == 1,
+                      isRouteSearch: false,
                       onSearchTap: widget.searchTapped,
                       controller: searchController,
                       searchResults: searchProvider.searchResults,
@@ -597,8 +598,8 @@ class _MainModalSheetState extends State<MainModalSheet> {
                   //Saved Stops List (Horizontal)
                   : Padding(
                       padding: const EdgeInsets.only(top: 10),
-                      child: HorizPaddingConstant(
-                        child: SizedBox(
+                      child: Constants.horizPadding(
+                        SizedBox(
                           width: double.infinity,
                           child: GridView(
                             padding: const EdgeInsets.only(),
@@ -817,6 +818,17 @@ class _HomePageDrawerState extends State<HomePageDrawer> {
                       contentPadding: const EdgeInsets.all(0),
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: ElevatedButton(
+                          onPressed: () {
+                            Provider.of<ApiInterface>(context, listen: false)
+                                .getAllActiveBuses();
+                          },
+                          child: const Text('Get all active buses')),
+                    ),
+                  )
                 ],
               ),
             ),

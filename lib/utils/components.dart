@@ -193,9 +193,10 @@ class ModalSearchBar extends StatelessWidget {
           onChanged: (s) => onSearchChanged(s),
           controller: controller,
           inputFormatters: [
-            if (isRouteSearch)
-              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
-            if (!isRouteSearch) FilteringTextInputFormatter.digitsOnly,
+            // if (isRouteSearch)
+            //   FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+            // if (!isRouteSearch)
+            FilteringTextInputFormatter.digitsOnly,
           ],
           onTapOutside: (event) {
             final FocusScopeNode currentScope = FocusScope.of(context);

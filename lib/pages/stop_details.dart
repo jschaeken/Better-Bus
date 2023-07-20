@@ -68,6 +68,13 @@ class _StopDetailsPageState extends State<StopDetailsPage>
     lightTouchImpact();
   }
 
+  Future<void> loadVehicleLocation(BusRtpi busRtpi) async {
+    log('loading vehicle location for trip id: ${busRtpi.tripInfo?.tripId}');
+    var busLoc = await Provider.of<ApiInterface>(context, listen: false)
+        .getVehicleLocation(busRtpi);
+    lightTouchImpact();
+  }
+
   @override
   Widget build(BuildContext context) {
     Animate.restartOnHotReload = true;
@@ -149,8 +156,8 @@ class _StopDetailsPageState extends State<StopDetailsPage>
               const SizedBox(
                 height: 10,
               ),
-              HorizPaddingConstant(
-                child: Row(
+              Constants.horizPadding(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Flexible(
@@ -198,13 +205,13 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                   ],
                 ),
               ),
-              const HorizPaddingConstant(
-                child: SizedBox(
+              Constants.horizPadding(
+                const SizedBox(
                   height: 20,
                 ),
               ),
-              HorizPaddingConstant(
-                child: AnimatedSwitcher(
+              Constants.horizPadding(
+                AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   child: noticeWidget,
                   transitionBuilder: (child, animation) {
@@ -218,9 +225,8 @@ class _StopDetailsPageState extends State<StopDetailsPage>
               //Times
               Flexible(
                 flex: 7,
-                child: HorizPaddingConstant(
-                  child:
-                      Consumer<ApiInterface>(builder: (context, value, child) {
+                child: Constants.horizPadding(
+                  Consumer<ApiInterface>(builder: (context, value, child) {
                     if (!value.isLoadingInfo) {
                       updateTime = DateTime.now();
                     }
@@ -314,8 +320,8 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                                 Flexible(
                                                   child: DevSlider(
                                                     min: 1,
-                                                    max: 5,
-                                                    divisions: 4,
+                                                    max: 8,
+                                                    divisions: 7,
                                                     label: 'Hours to show',
                                                     onChanged: (val) {
                                                       setState(() {
@@ -485,6 +491,12 @@ class _StopDetailsPageState extends State<StopDetailsPage>
                                                                 .arrivalTime),
                                                         accentButtonOnPressed:
                                                             () {},
+                                                        tileOnPressed: () {
+                                                          loadVehicleLocation(
+                                                            value.busRtpiList[
+                                                                index],
+                                                          );
+                                                        },
                                                       );
                                                     }),
                                           ),
@@ -609,6 +621,7 @@ class BusRtpiTile extends StatefulWidget {
     super.key,
     required this.buttonText,
     this.accentButtonOnPressed,
+    required this.tileOnPressed,
     required this.titleText,
     this.subtitleText,
     this.trailingText,
@@ -617,6 +630,7 @@ class BusRtpiTile extends StatefulWidget {
 
   final String buttonText;
   final VoidCallback? accentButtonOnPressed;
+  final VoidCallback tileOnPressed;
   final String titleText;
   final String? subtitleText;
   final String? trailingText;
@@ -643,14 +657,12 @@ class _BusRtpiTileState extends State<BusRtpiTile> {
               color: Theme.of(context).colorScheme.secondary,
               elevation: 0,
               child: ExpansionTile(
+                onExpansionChanged: (value) {
+                  if (value) {
+                    widget.tileOnPressed();
+                  } else {}
+                },
                 controller: controller,
-                // leading:
-                // widget.servingAgencyLogoPath == null
-                //     ? null
-                //     : ClipRRect(
-                //         borderRadius: BorderRadius.circular(100),
-                //         child: Image.asset(widget.servingAgencyLogoPath!,
-                //             width: 37, height: 37)),
                 title: Row(
                   children: [
                     widget.buttonText.isEmpty
@@ -762,20 +774,6 @@ class NoticeBox extends StatelessWidget {
           )
         ],
       ),
-    );
-  }
-}
-
-class HorizPaddingConstant extends StatelessWidget {
-  const HorizPaddingConstant({Key? key, required this.child}) : super(key: key);
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Constants.padding),
-      child: child,
     );
   }
 }

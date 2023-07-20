@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'package:flutter/widgets.dart';
 
 class Constants {
   //fonts
@@ -27,6 +27,11 @@ class Constants {
     AssetImages.appleMap: 'assets/images/appleMap.jpg',
     AssetImages.busEireannLogo: 'assets/images/busEireannLogo.jpg',
   };
+
+  static Widget horizPadding(Widget child) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Constants.padding),
+        child: child,
+      );
 }
 
 enum AssetImages {

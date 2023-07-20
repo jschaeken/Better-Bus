@@ -79,7 +79,7 @@ class VehicleInfo {
   Agency? agencyId;
 
   VehicleInfo({
-    this.position,
+    required this.position,
     this.routeId,
     required this.tripId,
     this.vehicleId,
