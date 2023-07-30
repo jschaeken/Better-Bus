@@ -232,7 +232,7 @@ class MapMarker extends Clusterable {
       ),
       infoWindow: InfoWindow(
           title: isCluster ?? false ? '$pointsSize Stops' : '$infoWindowText',
-          onTap: windowTapped(id)),
+          onTap: () => windowTapped(id)),
       icon: icon,
     );
   }

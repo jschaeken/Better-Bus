@@ -134,7 +134,7 @@ class ApiInterface extends ChangeNotifier {
           MapMarker(
             id: row[0].toString(),
             infoWindowText: row[1].toString(),
-            windowTapped: (stopId) => stopWindowTapped == null
+            windowTapped: (_) => stopWindowTapped == null
                 ? null
                 : stopWindowTapped(row[0].toString()),
             icon: BitmapDescriptor.defaultMarker,
@@ -449,15 +449,16 @@ class ApiInterface extends ChangeNotifier {
       _isLoadingInfo = true;
     }
     busRtpiList = [];
-    Map<String, dynamic> jsonMap = await remoteApi.queryBusTimesByStopId(
+    bool hasInternet = await remoteApi.checkConnection();
+    log('hasInternet: $hasInternet');
+    List<dynamic> items = await remoteApi.queryLiveBusTimesByStopId(
       stopId,
       (e) {
-        throw ('A network error has occured');
+        throw ('A network error has occured, $e');
       },
       minutesIntoFuture: minsIntoFuture ?? 60,
     );
     List<BusRtpi> tempRtpiList = [];
-    List<dynamic> items = jsonMap['filtered'];
 
     await Future.forEach(
       items,

@@ -124,6 +124,41 @@ class RemoteApi {
     }
   }
 
+  Future<List<dynamic>> queryLiveBusTimesByStopId(
+      String stopId, Function(String e) errorCallback,
+      {required int minutesIntoFuture}) async {
+    int timeNow = apiInterface.getMinutesSinceDayStart(DateTime.now());
+    int maxArrivalTime = timeNow + minutesIntoFuture;
+    String stage = dotenv.env['STAGE'] ?? 'dev';
+    //TODO: Add internet connection check
+
+    Uri uri = Uri.parse(
+        '$baseUrl$stage/get-live-bus-times-at-stop?stop_id=$stopId&time_now=$timeNow&max_arrival_time=$maxArrivalTime');
+
+    try {
+      Response response = await http.get(
+        uri,
+        headers: authHeaders,
+      );
+
+      log(response.body, name: 'queryLiveBusTimesByStopId');
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Request failed with status: ${response.statusCode}, ${response.body}');
+      }
+      log('response: ${response.statusCode}, ${response.body}');
+
+      List<dynamic> busRtpiJson = jsonDecode(response.body);
+      log('items returned: ${busRtpiJson.length}');
+      return busRtpiJson;
+    } catch (e) {
+      log(e.toString(), name: 'queryBusTimesByStopId');
+      errorCallback(e.toString());
+      throw Exception(e);
+    }
+  }
+
   String formatDateTime(DateTime dateTime) {
     String formatted = DateFormat.Hms().format(dateTime);
     return formatted;
@@ -175,6 +210,19 @@ class RemoteApi {
     } catch (e) {
       log(e.toString(), name: 'queryAllActiveBuses');
       return Future.value({});
+    }
+  }
+
+  Future<bool> checkConnection() async {
+    Uri uri = Uri.parse("https://google.com");
+
+    try {
+      Response response = await http.get(
+        uri,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
     }
   }
 }

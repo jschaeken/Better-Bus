@@ -75,6 +75,7 @@ class HomePageState extends State<HomePage> {
   }
 
   markerWindowTapped(String stopId) {
+    log('marker window tapped: $stopId', name: 'marker_window_tapped');
     Stop? stop = Provider.of<ApiInterface>(context, listen: false)
         .searchByStopId(stopId, (e) => genericDebugErrorHandler(e));
     if (stop != null) {
