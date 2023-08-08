@@ -170,14 +170,15 @@ class BusRtpi {
   DateTime arrivalTime;
   DateTime? departureTime;
   int? departureMins;
+  int? delay;
 
-  BusRtpi({
-    required this.tripInfo,
-    required this.scheduleType,
-    required this.arrivalTime,
-    this.departureTime,
-    this.departureMins,
-  });
+  BusRtpi(
+      {required this.tripInfo,
+      required this.scheduleType,
+      required this.arrivalTime,
+      this.departureTime,
+      this.departureMins,
+      this.delay});
 }
 
 enum ApiType {
@@ -232,7 +233,9 @@ class MapMarker extends Clusterable {
       ),
       infoWindow: InfoWindow(
           title: isCluster ?? false ? '$pointsSize Stops' : '$infoWindowText',
-          onTap: () => windowTapped(id)),
+          onTap: () {
+            windowTapped(id);
+          }),
       icon: icon,
     );
   }

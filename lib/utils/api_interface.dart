@@ -110,7 +110,7 @@ class ApiInterface extends ChangeNotifier {
 
   Future<void> loadStops(
       {Function(String e)? callback,
-      Function(String stopId)? stopWindowTapped}) async {
+      required Function(String stopId) stopWindowTapped}) async {
     int i = 0;
     log('loading stops');
     try {
@@ -134,9 +134,9 @@ class ApiInterface extends ChangeNotifier {
           MapMarker(
             id: row[0].toString(),
             infoWindowText: row[1].toString(),
-            windowTapped: (_) => stopWindowTapped == null
-                ? null
-                : stopWindowTapped(row[0].toString()),
+            windowTapped: (_) {
+              stopWindowTapped(row[0].toString());
+            },
             icon: BitmapDescriptor.defaultMarker,
             position: LatLng(
               double.parse(row[4].toString()),
@@ -144,9 +144,6 @@ class ApiInterface extends ChangeNotifier {
             ),
           ),
         );
-        if (i % 1000 == 0) {
-          log('${mapMarkers[i - 1].latitude}, ${mapMarkers[i - 1].longitude}');
-        }
       });
 
       log('loaded stops: listStopsLength: ${_listStops.length}, mapMarkersLength: ${_mapMarkers.length}');
@@ -251,6 +248,10 @@ class ApiInterface extends ChangeNotifier {
           callback: (e) {
             errorCallback(e);
           },
+          stopWindowTapped: (stopId) {
+            log('stopWindowTapped: $stopId',
+                name: 'searchByStopCode, API Interface');
+          },
         );
       }
       if (trim.isEmpty) {
@@ -269,6 +270,10 @@ class ApiInterface extends ChangeNotifier {
         loadStops(
           callback: (e) {
             errorCallback(e);
+          },
+          stopWindowTapped: (stopId) {
+            log('stopWindowTapped: $stopId',
+                name: 'searchByStopCode, API Interface');
           },
         );
       }
@@ -449,8 +454,8 @@ class ApiInterface extends ChangeNotifier {
       _isLoadingInfo = true;
     }
     busRtpiList = [];
-    bool hasInternet = await remoteApi.checkConnection();
-    log('hasInternet: $hasInternet');
+    // bool hasInternet = await remoteApi.checkConnection();
+    // log('hasInternet: $hasInternet');
     List<dynamic> items = await remoteApi.queryLiveBusTimesByStopId(
       stopId,
       (e) {
@@ -475,6 +480,7 @@ class ApiInterface extends ChangeNotifier {
                   getRelativeMins(minsToDateTime(busTime['arrival_time'])) + 1,
               scheduleType: ScheduleType.scheduled,
               tripInfo: tripInfo,
+              delay: busTime['delay'] ?? 0,
             ),
           );
           if (!streamResults) {

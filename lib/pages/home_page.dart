@@ -61,12 +61,16 @@ class HomePageState extends State<HomePage> {
 
   initialStopsLoad() async {
     await Provider.of<ApiInterface>(context, listen: false).loadStops(
-        callback: (errorString) {
-      if (errorString.isNotEmpty) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(errorString)));
-      }
-    });
+      callback: (errorString) {
+        if (errorString.isNotEmpty) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(errorString)));
+        }
+      },
+      stopWindowTapped: (stopId) {
+        markerWindowTapped(stopId);
+      },
+    );
   }
 
   initialCalendarLoad() async {
