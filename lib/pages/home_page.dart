@@ -56,7 +56,7 @@ class HomePageState extends State<HomePage> {
   loadClusterMarkerImage() async {
     clusterImage = await BitmapDescriptor.fromAssetImage(
         const ImageConfiguration(),
-        Constants.assetRoutesMap[AssetImages.clusterMarkerIcon]!);
+        Constants.assetRoutesMap[AssetId.clusterMarkerIcon]!);
   }
 
   initialStopsLoad() async {
@@ -167,7 +167,7 @@ class HomePageState extends State<HomePage> {
                         );
                       })
                     : Image.asset(
-                        Constants.assetRoutesMap[AssetImages.appleMap]!,
+                        Constants.assetRoutesMap[AssetId.appleMap]!,
                         fit: BoxFit.cover,
                       ),
                 SafeArea(

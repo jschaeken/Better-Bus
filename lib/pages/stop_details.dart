@@ -531,11 +531,11 @@ class _StopDetailsPageState extends State<StopDetailsPage>
   String? getLogoPathForAgency(Agency? servingAgenci) {
     switch (servingAgenci) {
       case Agency.dublinBus:
-        return Constants.assetRoutesMap[AssetImages.dublinBusLogo]!;
+        return Constants.assetRoutesMap[AssetId.dublinBusLogo]!;
       case Agency.goAhead:
-        return Constants.assetRoutesMap[AssetImages.goAheadLogo]!;
+        return Constants.assetRoutesMap[AssetId.goAheadLogo]!;
       case Agency.busEireann:
-        return Constants.assetRoutesMap[AssetImages.busEireannLogo]!;
+        return Constants.assetRoutesMap[AssetId.busEireannLogo]!;
       default:
         return null;
     }

@@ -19,13 +19,14 @@ class Constants {
 
   static const headerFontWeight = FontWeight.w600;
 
-  static const assetRoutesMap = <AssetImages, String>{
-    AssetImages.dublinBusLogoSmall: 'assets/images/dublinBusLogoSmall.png',
-    AssetImages.dublinBusLogo: 'assets/images/dublinBusLogo.jpg',
-    AssetImages.goAheadLogo: 'assets/images/goAheadLogo.png',
-    AssetImages.clusterMarkerIcon: 'assets/images/clusterMarkerIcon.png',
-    AssetImages.appleMap: 'assets/images/appleMap.jpg',
-    AssetImages.busEireannLogo: 'assets/images/busEireannLogo.jpg',
+  static const assetRoutesMap = <AssetId, String>{
+    AssetId.dublinBusLogoSmall: 'assets/images/dublinBusLogoSmall.png',
+    AssetId.dublinBusLogo: 'assets/images/dublinBusLogo.jpg',
+    AssetId.goAheadLogo: 'assets/images/goAheadLogo.png',
+    AssetId.clusterMarkerIcon: 'assets/images/clusterMarkerIcon.png',
+    AssetId.appleMap: 'assets/images/appleMap.jpg',
+    AssetId.busEireannLogo: 'assets/images/busEireannLogo.jpg',
+    AssetId.markerIconMaterial: 'assets/images/markerIcon.png',
   };
 
   static Widget horizPadding(Widget child) => Padding(
@@ -34,11 +35,12 @@ class Constants {
       );
 }
 
-enum AssetImages {
+enum AssetId {
   dublinBusLogoSmall,
   dublinBusLogo,
   goAheadLogo,
   clusterMarkerIcon,
+  markerIconMaterial,
   appleMap,
   busEireannLogo,
 }

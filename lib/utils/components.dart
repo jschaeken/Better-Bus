@@ -65,7 +65,7 @@ class SavedStopTile extends StatelessWidget {
                           maxWidth: 40,
                           child: Image.asset(
                             Constants
-                                .assetRoutesMap[AssetImages.clusterMarkerIcon]!,
+                                .assetRoutesMap[AssetId.markerIconMaterial]!,
                             filterQuality: FilterQuality.high,
                             isAntiAlias: true,
                           ),

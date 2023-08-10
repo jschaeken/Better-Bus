@@ -130,7 +130,7 @@ class _RouteDetailState extends State<RouteDetail> {
                   markers: placeMarkers(currentRoute.routeStops),
                 )
               : Image.asset(
-                  Constants.assetRoutesMap[AssetImages.appleMap]!,
+                  Constants.assetRoutesMap[AssetId.appleMap]!,
                   fit: BoxFit.cover,
                 ),
           DraggableScrollableSheet(

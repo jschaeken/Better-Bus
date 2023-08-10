@@ -71,7 +71,7 @@ class FullMapViewState extends State<FullMapView> {
               fit: StackFit.expand,
               children: [
                 Image.asset(
-                  Constants.assetRoutesMap[AssetImages.appleMap]!,
+                  Constants.assetRoutesMap[AssetId.appleMap]!,
                   fit: BoxFit.cover,
                 ),
               ],

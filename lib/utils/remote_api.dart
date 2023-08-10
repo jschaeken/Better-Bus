@@ -130,7 +130,6 @@ class RemoteApi {
     int timeNow = apiInterface.getMinutesSinceDayStart(DateTime.now());
     int maxArrivalTime = timeNow + minutesIntoFuture;
     String stage = dotenv.env['STAGE'] ?? 'dev';
-    //TODO: Add internet connection check
 
     Uri uri = Uri.parse(
         '$baseUrl$stage/get-live-bus-times-at-stop?stop_id=$stopId&time_now=$timeNow&max_arrival_time=$maxArrivalTime');
